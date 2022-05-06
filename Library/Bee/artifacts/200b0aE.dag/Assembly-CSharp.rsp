@@ -346,7 +346,7 @@
 "Assets/PlayerControls/MouseHandler.cs"
 "Assets/PlayerControls/PlayerController.cs"
 "Assets/TerrainGeneration/ApplyingTextures.cs"
-"Assets/TerrainGeneration/GenerateChunk.cs"
+"Assets/TerrainGeneration/GenerateChunks.cs"
 -langversion:9.0
 
 /deterministic
