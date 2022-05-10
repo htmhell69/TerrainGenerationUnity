@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class MeshGeneration
 {
-    public static void GenerateMesh(TerrainChunk chunk, float[,] heightmap)
+    public static void GenerateMesh(TerrainChunk chunk, float[,] heightmap, int heightMultiplier)
     {
         GameObject gameObject = chunk.GetChunkGameObject();
         Mesh mesh = new Mesh();
@@ -22,7 +22,7 @@ public static class MeshGeneration
         {
             for (int x = 0; x <= chunkWidth; x++)
             {
-                vertices[i] = new Vector3(x, 0, z);
+                vertices[i] = new Vector3(x, heightmap[x, z] * heightMultiplier, z);
                 i++;
             }
         }
@@ -31,6 +31,7 @@ public static class MeshGeneration
         {
             for (int x = 0; x < chunkWidth; x++)
             {
+
                 triangles[tris + 0] = vert + 0;
                 triangles[tris + 1] = vert + chunkWidth + 1;
                 triangles[tris + 2] = vert + 1;

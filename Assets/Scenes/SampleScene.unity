@@ -222,11 +222,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   viewer: {fileID: 219671369}
   viewDistanceInChunks: 2
-  chunkSize: 2
+  chunkSize: 50
   maxAmountOfChunks: 40
   chunkMaterial: {fileID: 2100000, guid: 72b3c8af953f54a9085ddbb1bb712c42, type: 2}
-  scale: 5
+  scale: 50
   seed: 0
+  heightMultiplier: 20
 --- !u!4 &336273892
 Transform:
   m_ObjectHideFlags: 0
@@ -350,7 +351,7 @@ GameObject:
   - component: {fileID: 988664238}
   m_Layer: 0
   m_Name: Camera
-  m_TagString: Untagged
+  m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

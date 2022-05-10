@@ -15,9 +15,11 @@ public static class Noise
         {
             for (int x = 0; x < width; x++)
             {
-                float perlinX = x / scale + seed + (width * chunkX);
-                float perlinY = z / scale + seed + (height * chunkZ);
-                float perlinOutput = Mathf.PerlinNoise(x, z);
+                float xOffset = width * chunkX;
+                float zOffset = height * chunkZ;
+                float perlinX = (float)(x + xOffset) / scale + seed;
+                float perlinZ = (float)(z + zOffset) / scale + seed;
+                float perlinOutput = Mathf.PerlinNoise(perlinX, perlinZ);
                 noiseMap[x, z] = perlinOutput;
             }
         }

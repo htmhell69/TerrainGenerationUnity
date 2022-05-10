@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class GenerateChunks : MonoBehaviour
 {
     [Header("Chunks")]
@@ -16,6 +17,7 @@ public class GenerateChunks : MonoBehaviour
     [Header("Height Map Generation")]
     [SerializeField] int scale = 5;
     [SerializeField] int seed;
+    [SerializeField] int heightMultiplier;
     int currentAmountOfChunks;
     Vector3 viewerPosition = new Vector3();
     int chunksVisible;
@@ -25,8 +27,8 @@ public class GenerateChunks : MonoBehaviour
 
     void Start()
     {
-        seed = Random.Range(0, 999999);
-        viewer.position = new Vector3((maxAmountOfChunks * chunkSize) / 2, 10, (maxAmountOfChunks * chunkSize) / 2);
+        seed = UnityEngine.Random.Range(0, 999999);
+        viewer.position = new Vector3((maxAmountOfChunks * chunkSize) / 2, scale * 2, (maxAmountOfChunks * chunkSize) / 2);
         chunks = new TerrainChunk[maxAmountOfChunks, maxAmountOfChunks];
     }
 
@@ -104,11 +106,17 @@ public class GenerateChunks : MonoBehaviour
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
-        MeshGeneration.GenerateMesh(chunk, Noise.GenerateNoiseMap(chunkSize, chunkSize, chunkX, chunkZ, seed, scale));
+        ChunkData chunkData = GenerateChunkData(chunk);
+        MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap(), heightMultiplier);
     }
 
+    ChunkData GenerateChunkData(TerrainChunk chunk)
+    {
+        float[,] noiseMap = Noise.GenerateNoiseMap(chunkSize + 1, chunkSize + 1, chunk.GetChunkX(), chunk.GetChunkZ(), seed, scale);
+        return new ChunkData(noiseMap);
+    }
 
-
+    //starting a new thread for calculating chunk data
 }
 
 public class TerrainChunk
@@ -154,3 +162,20 @@ public class TerrainChunk
     }
 
 }
+
+public struct ChunkData
+{
+    //this will have more than height map later on 
+    float[,] heightMap;
+
+    public ChunkData(float[,] heightMap)
+    {
+        this.heightMap = heightMap;
+    }
+    public float[,] getHeightMap()
+    {
+        return heightMap;
+    }
+}
+
+
