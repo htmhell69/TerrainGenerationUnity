@@ -221,13 +221,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   viewer: {fileID: 219671369}
-  viewDistanceInChunks: 2
-  chunkSize: 50
+  viewDistanceInChunks: 5
+  chunkSize: 10
   maxAmountOfChunks: 40
   chunkMaterial: {fileID: 2100000, guid: 72b3c8af953f54a9085ddbb1bb712c42, type: 2}
-  scale: 50
+  resolution: 1
+  scale: 10
   seed: 0
-  heightMultiplier: 20
+  heightMultiplier: 10
 --- !u!4 &336273892
 Transform:
   m_ObjectHideFlags: 0

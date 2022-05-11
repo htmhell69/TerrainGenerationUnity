@@ -13,11 +13,13 @@ public class GenerateChunks : MonoBehaviour
     [SerializeField] int chunkSize;
     [SerializeField] int maxAmountOfChunks;
     [SerializeField] Material chunkMaterial;
+    [SerializeField] int resolution;
 
     [Header("Height Map Generation")]
     [SerializeField] int scale = 5;
     [SerializeField] int seed;
     [SerializeField] int heightMultiplier;
+
     int currentAmountOfChunks;
     Vector3 viewerPosition = new Vector3();
     int chunksVisible;
@@ -112,7 +114,7 @@ public class GenerateChunks : MonoBehaviour
 
     ChunkData GenerateChunkData(TerrainChunk chunk)
     {
-        float[,] noiseMap = Noise.GenerateNoiseMap(chunkSize + 1, chunkSize + 1, chunk.GetChunkX(), chunk.GetChunkZ(), seed, scale);
+        float[,] noiseMap = Noise.GenerateNoiseMap(chunk, seed, scale);
         return new ChunkData(noiseMap);
     }
 

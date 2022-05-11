@@ -8,15 +8,20 @@ public static class Noise
     static float[,] noiseMap;
 
 
-    public static float[,] GenerateNoiseMap(int width, int height, int chunkX, int chunkZ, int seed, int scale)
+    public static float[,] GenerateNoiseMap(TerrainChunk chunk, int seed, int scale)
     {
+        GameObject chunkGameObject = chunk.GetChunkGameObject();
+        int width = chunk.GetChunkSize() + 1 * chunk.GetChunkX();
+        int height = chunk.GetChunkSize() + 1;
+        int chunkX = chunk.GetChunkX();
+        int chunkZ = chunk.GetChunkZ();
         noiseMap = new float[width, height];
         for (int z = 0; z < height; z++)
         {
             for (int x = 0; x < width; x++)
             {
-                float xOffset = width * chunkX;
-                float zOffset = height * chunkZ;
+                float xOffset = chunkGameObject.transform.position.x;
+                float zOffset = chunkGameObject.transform.position.z;
                 float perlinX = (float)(x + xOffset) / scale + seed;
                 float perlinZ = (float)(z + zOffset) / scale + seed;
                 float perlinOutput = Mathf.PerlinNoise(perlinX, perlinZ);

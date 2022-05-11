@@ -1,6 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
 
 public static class MeshGeneration
 {
@@ -54,5 +53,6 @@ public static class MeshGeneration
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = mesh;
     }
+
 
 }
