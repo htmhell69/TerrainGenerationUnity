@@ -12,21 +12,7 @@ public class BiomeHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-    bool IsEnabled()
-    {
-        return isEnabled;
-    }
-    Biome SelectBiome()
-    {
-        if (UnityEngine.Random.Range(0, 1) < (float)biomeDiversity / 100)
+        if (isEnabled && biomes.Length != 0)
         {
             bool hasFoundBiome = false;
             int biomeIndex = 0;
@@ -39,11 +25,45 @@ public class BiomeHandler : MonoBehaviour
                     currentBiome = biomes[biomeIndex];
                 }
             }
-            return biomes[biomeIndex];
+        }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+    public bool IsEnabled()
+    {
+        return isEnabled;
+    }
+    public Biome SelectBiome()
+    {
+        if (isEnabled || biomes.Length == 0)
+        {
+            if (UnityEngine.Random.Range(0, 1) < (float)biomeDiversity / 100)
+            {
+                bool hasFoundBiome = false;
+                int biomeIndex = 0;
+                while (!hasFoundBiome)
+                {
+                    biomeIndex = UnityEngine.Random.Range(0, biomes.Length);
+                    if (UnityEngine.Random.Range(0, 1) < (float)biomes[biomeIndex].GetLikelihood() / 100)
+                    {
+                        hasFoundBiome = true;
+                        currentBiome = biomes[biomeIndex];
+                    }
+                }
+                return biomes[biomeIndex];
+            }
+            else
+            {
+                return currentBiome;
+            }
         }
         else
         {
-            return currentBiome;
+            return null;
         }
     }
 
@@ -55,9 +75,18 @@ public class Biome
 {
     [Range(1, 100)]
     [SerializeField] int likelihood;
-    [SerializeField] int heightScale;
+    [SerializeField] int heightMultiplier;
+    [SerializeField] int noiseScale;
     public int GetLikelihood()
     {
         return likelihood;
+    }
+    public int GetHeightMultiplier()
+    {
+        return heightMultiplier;
+    }
+    public int GetNoiseScale()
+    {
+        return noiseScale;
     }
 }

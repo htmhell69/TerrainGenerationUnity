@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class MeshGeneration
 {
-    public static void GenerateMesh(TerrainChunk chunk, float[,] heightmap, int heightMultiplier)
+    public static void GenerateMesh(TerrainChunk chunk, float[,] heightmap)
     {
         GameObject gameObject = chunk.GetChunkGameObject();
         Mesh mesh = new Mesh();
@@ -16,6 +16,8 @@ public static class MeshGeneration
         int tris = 0;
         int vert = 0;
         meshFilter.mesh = mesh;
+
+        int heightMultiplier = chunk.GetBiome().GetHeightMultiplier();
 
         for (int i = 0, z = 0; z <= chunkHeight; z++)
         {

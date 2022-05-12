@@ -16,10 +16,7 @@ public class GenerateChunks : MonoBehaviour
     [SerializeField] int resolution;
 
     [Header("Height Map Generation")]
-    [SerializeField] int scale = 5;
     [SerializeField] int seed;
-    [SerializeField] int heightMultiplier;
-    bool hasBiomes;
     BiomeHandler biomeHandler;
     int currentAmountOfChunks;
     Vector3 viewerPosition = new Vector3();
@@ -31,24 +28,15 @@ public class GenerateChunks : MonoBehaviour
     void Start()
     {
         biomeHandler = FindObjectOfType<BiomeHandler>();
-        if (biomeHandler == null)
-        {
-            hasBiomes = false;
-        }
-        else
-        {
-
-        }
         seed = UnityEngine.Random.Range(0, 999999);
-        viewer.position = new Vector3((maxAmountOfChunks * chunkSize) / 2, scale * 2, (maxAmountOfChunks * chunkSize) / 2);
+        viewer.position = new Vector3((maxAmountOfChunks * chunkSize) / 2, 100, (maxAmountOfChunks * chunkSize) / 2);
         chunks = new TerrainChunk[maxAmountOfChunks, maxAmountOfChunks];
-
     }
 
     void Update()
     {
-        Vector2Int oldChunkPosition = new Vector2Int(Mathf.FloorToInt(viewerPosition.z / chunkSize), Mathf.FloorToInt(viewerPosition.x / chunkSize));
-        Vector2Int newChunkPosition = new Vector2Int(Mathf.FloorToInt(viewer.position.z / chunkSize), Mathf.FloorToInt(viewer.position.x / chunkSize));
+        Vector2Int oldChunkPosition = GetChunkFromWorldPos(viewerPosition);
+        Vector2Int newChunkPosition = GetChunkFromWorldPos(viewer.position);
         bool isNewChunk = oldChunkPosition != newChunkPosition;
         viewerPosition = viewer.position;
         if (isNewChunk)
@@ -56,16 +44,18 @@ public class GenerateChunks : MonoBehaviour
             Debug.Log("new chunk");
             UpdateChunks();
         }
-
     }
 
     public void ModifyTerrainChunk(int chunkX, int chunkZ)
     {
-
         TerrainChunk currentChunk = chunks[chunkX, chunkZ];
         if (currentChunk == null)
         {
-            currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, chunkMaterial);
+
+            Biome biome = biomeHandler.SelectBiome();
+            currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, chunkMaterial, biome);
+
+
         }
         currentChunk.SetVisible(true);
         GenerateChunkDetails(currentChunk);
@@ -120,16 +110,21 @@ public class GenerateChunks : MonoBehaviour
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
         ChunkData chunkData = GenerateChunkData(chunk);
-        MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap(), heightMultiplier);
+        MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
     }
 
     ChunkData GenerateChunkData(TerrainChunk chunk)
     {
-        float[,] noiseMap = Noise.GenerateNoiseMap(chunk, seed, scale);
+        Biome currentBiome = chunk.GetBiome();
+        float[,] noiseMap = Noise.GenerateNoiseMap(chunk, seed, currentBiome.GetNoiseScale());
         return new ChunkData(noiseMap);
     }
 
-    //starting a new thread for calculating chunk data
+    Vector2Int GetChunkFromWorldPos(Vector3 worldPos)
+    {
+        Vector2Int chunkPos = new Vector2Int(Mathf.FloorToInt(worldPos.x / chunkSize), Mathf.FloorToInt(worldPos.z / chunkSize));
+        return chunkPos;
+    }
 }
 
 public class TerrainChunk
@@ -138,8 +133,9 @@ public class TerrainChunk
     int x;
     int z;
     int chunkSize;
+    Biome biome;
 
-    public TerrainChunk(Vector2 chunkPosition, int size, int chunkX, int chunkY, Material material)
+    public TerrainChunk(Vector2 chunkPosition, int size, int chunkX, int chunkY, Material material, Biome biome)
     {
         chunkObject = new GameObject("chunk");
         chunkObject.AddComponent<MeshRenderer>();
@@ -151,6 +147,7 @@ public class TerrainChunk
         chunkObject.GetComponent<MeshRenderer>().material = material;
         chunkObject.SetActive(false);
         chunkSize = size;
+        this.biome = biome;
     }
     public void SetVisible(bool visibility)
     {
@@ -172,6 +169,11 @@ public class TerrainChunk
     public int GetChunkSize()
     {
         return chunkSize;
+    }
+
+    public Biome GetBiome()
+    {
+        return biome;
     }
 
 }
