@@ -19,7 +19,8 @@ public class GenerateChunks : MonoBehaviour
     [SerializeField] int scale = 5;
     [SerializeField] int seed;
     [SerializeField] int heightMultiplier;
-
+    bool hasBiomes;
+    BiomeHandler biomeHandler;
     int currentAmountOfChunks;
     Vector3 viewerPosition = new Vector3();
     int chunksVisible;
@@ -29,9 +30,19 @@ public class GenerateChunks : MonoBehaviour
 
     void Start()
     {
+        biomeHandler = FindObjectOfType<BiomeHandler>();
+        if (biomeHandler == null)
+        {
+            hasBiomes = false;
+        }
+        else
+        {
+
+        }
         seed = UnityEngine.Random.Range(0, 999999);
         viewer.position = new Vector3((maxAmountOfChunks * chunkSize) / 2, scale * 2, (maxAmountOfChunks * chunkSize) / 2);
         chunks = new TerrainChunk[maxAmountOfChunks, maxAmountOfChunks];
+
     }
 
     void Update()
