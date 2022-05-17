@@ -132,13 +132,13 @@ public class GenerateChunks : MonoBehaviour
     {
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
-        for (int z = chunkZ; z < chunkZ + 1; z++)
+        for (int z = chunkZ - 1; z < chunkZ + 1; z++)
         {
             TerrainChunk neighboringChunk = chunks[chunkX, z];
-            if (neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
+            if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
                 int side = 0;
-                if (z == chunkZ - 1)
+                if (z == chunkZ)
                 {
                     neighboringChunk = chunks[chunkX, z];
                     side = 2;
@@ -149,10 +149,10 @@ public class GenerateChunks : MonoBehaviour
         for (int x = chunkX; x < chunkX + 1; x++)
         {
             TerrainChunk neighboringChunk = chunks[x, chunkZ];
-            if (neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
+            if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
                 int side = 1;
-                if (x == chunkX - 1)
+                if (x == chunkX)
                 {
                     neighboringChunk = chunks[x, chunkZ];
                     side = 3;
