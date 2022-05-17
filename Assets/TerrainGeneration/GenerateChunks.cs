@@ -108,6 +108,7 @@ public class GenerateChunks : MonoBehaviour
         ChunkData chunkData = GenerateChunkData(chunk);
         MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
         FixBiomeOffsets(chunk);
+        chunkGameObject.GetComponent<MeshFilter>().mesh.UploadMeshData(false);
     }
 
     ChunkData GenerateChunkData(TerrainChunk chunk)
@@ -132,7 +133,7 @@ public class GenerateChunks : MonoBehaviour
     {
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
-        for (int z = chunkZ - 1; z < chunkZ + 1; z++)
+        for (int z = chunkZ - 1; z <= chunkZ + 1; z += 2)
         {
             TerrainChunk neighboringChunk = chunks[chunkX, z];
             if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
@@ -146,7 +147,7 @@ public class GenerateChunks : MonoBehaviour
                 LerpVertices(neighboringChunk, chunk, side);
             }
         }
-        for (int x = chunkX; x < chunkX + 1; x++)
+        for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
             TerrainChunk neighboringChunk = chunks[x, chunkZ];
             if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
@@ -154,10 +155,11 @@ public class GenerateChunks : MonoBehaviour
                 int side = 1;
                 if (x == chunkX - 1)
                 {
+
                     neighboringChunk = chunks[x, chunkZ];
                     side = 3;
                 }
-                LerpVertices(neighboringChunk, chunk, side);
+                LerpVertices(neighboringChunk, neighboringChunk, side);
             }
             ReadjustMeshCollider(chunk);
         }
@@ -165,13 +167,11 @@ public class GenerateChunks : MonoBehaviour
     //side 0 is top side, 1 is right side, 2 is bottom side, 3 is left side
     public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
     {
-        Debug.Log(chunk == neighboringChunk);
         int[] neighborVerticesIndex = new int[chunkSize];
         int[] chunkVerticesIndex = new int[chunkSize];
 
         Vector3[] chunkVertices = chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
         Vector3[] neighborChunkVertices = neighboringChunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
-
         int iNeighborChunk = 0;
         int iChunk = 0;
         int incrementAmountNeighbor = 1;
