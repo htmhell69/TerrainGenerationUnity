@@ -138,7 +138,7 @@ public class GenerateChunks : MonoBehaviour
             if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
                 int side = 0;
-                if (z == chunkZ)
+                if (z == chunkZ - 1)
                 {
                     neighboringChunk = chunks[chunkX, z];
                     side = 2;
@@ -152,12 +152,12 @@ public class GenerateChunks : MonoBehaviour
             if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
                 int side = 1;
-                if (x == chunkX)
+                if (x == chunkX - 1)
                 {
                     neighboringChunk = chunks[x, chunkZ];
                     side = 3;
                 }
-                LerpVertices(chunk, neighboringChunk, side);
+                LerpVertices(neighboringChunk, chunk, side);
             }
             ReadjustMeshCollider(chunk);
         }
@@ -165,6 +165,7 @@ public class GenerateChunks : MonoBehaviour
     //side 0 is top side, 1 is right side, 2 is bottom side, 3 is left side
     public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
     {
+        Debug.Log(chunk == neighboringChunk);
         int[] neighborVerticesIndex = new int[chunkSize];
         int[] chunkVerticesIndex = new int[chunkSize];
 
