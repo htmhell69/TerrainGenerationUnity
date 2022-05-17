@@ -184,6 +184,7 @@ public class GenerateChunks : MonoBehaviour
         int iChunk = 0;
         int incrementAmountNeighbor = 1;
         int incrementAmountChunk = 1;
+        Debug.Log(side);
         chunkMeshFilter.mesh.MarkDynamic();
         if (side == 0)
         {
@@ -225,12 +226,14 @@ public class GenerateChunks : MonoBehaviour
         for (int i = 0; i < chunkSize; i++)
         {
             Vector3 neighborchunkVertice = neighborChunkVertices[neighborVerticesIndex[i]];
-            
+            if(neighborVerticesIndex[i] == 0) {
+                Debug.Log(neighborchunkVertice);
+            }
             chunkVertices[chunkVerticesIndex[i]].y = neighborchunkVertice.y;
         }
-      
+        Debug.Log(chunkVertices[0]);
         chunkMeshFilter.mesh.vertices = chunkVertices;
-      
+        Debug.Log(chunkMeshFilter.mesh.vertices[0]);
     }
 
     public void ReadjustMeshCollider(TerrainChunk chunk)
@@ -262,7 +265,7 @@ public class TerrainChunk
         chunkObject.AddComponent<MeshFilter>();
         chunkObject.AddComponent<MeshCollider>();
         x = chunkX;
-        
+        Debug.Log("X CHUNK INIT: " + x);
         z = chunkY;
         chunkObject.transform.position = new Vector3(chunkPosition.x, 0, chunkPosition.y);
         chunkObject.GetComponent<MeshRenderer>().material = material;
