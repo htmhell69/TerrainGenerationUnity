@@ -153,7 +153,7 @@ public class GenerateChunks : MonoBehaviour
                 neighboringChunk = chunks[x, chunkZ];
                 side = 3;
             }
-            LerpVertices(neighboringChunk, chunk, side);
+            LerpVertices(chunk, neighboringChunk, side);
         }
         ReadjustMeshCollider(chunk);
     }
@@ -170,6 +170,8 @@ public class GenerateChunks : MonoBehaviour
         int iChunk = 0;
         int incrementAmountNeighbor = 1;
         int incrementAmountChunk = 1;
+
+        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.MarkDynamic();
         if (side == 0)
         {
             iChunk = chunkSize * chunkSize - 1;
@@ -211,6 +213,7 @@ public class GenerateChunks : MonoBehaviour
             Vector3 neighborchunkVertice = neighborChunkVertices[neighborVerticesIndex[i]];
             chunkVertices[chunkVerticesIndex[i]].y = neighborchunkVertice.y;
         }
+        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices = chunkVertices;
     }
 
     public void ReadjustMeshCollider(TerrainChunk chunk)
