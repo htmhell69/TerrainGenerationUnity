@@ -51,7 +51,6 @@ public class GenerateChunks : MonoBehaviour
         TerrainChunk currentChunk = chunks[chunkX, chunkZ];
         if (currentChunk == null)
         {
-
             Biome biome = biomeHandler.SelectBiome();
             currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, chunkMaterial, biome);
         }
@@ -136,26 +135,32 @@ public class GenerateChunks : MonoBehaviour
         for (int z = chunkZ; z < chunkZ + 1; z++)
         {
             TerrainChunk neighboringChunk = chunks[chunkX, z];
-            int side = 0;
-            if (z == chunkZ)
+            if (neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
-                neighboringChunk = chunks[chunkX, z];
-                side = 2;
+                int side = 0;
+                if (z == chunkZ - 1)
+                {
+                    neighboringChunk = chunks[chunkX, z];
+                    side = 2;
+                }
+                LerpVertices(neighboringChunk, chunk, side);
             }
-            LerpVertices(neighboringChunk, chunk, side);
         }
         for (int x = chunkX; x < chunkX + 1; x++)
         {
             TerrainChunk neighboringChunk = chunks[x, chunkZ];
-            int side = 1;
-            if (x == chunkX)
+            if (neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
-                neighboringChunk = chunks[x, chunkZ];
-                side = 3;
+                int side = 1;
+                if (x == chunkX - 1)
+                {
+                    neighboringChunk = chunks[x, chunkZ];
+                    side = 3;
+                }
+                LerpVertices(chunk, neighboringChunk, side);
             }
-            LerpVertices(chunk, neighboringChunk, side);
+            ReadjustMeshCollider(chunk);
         }
-        ReadjustMeshCollider(chunk);
     }
     //side 0 is top side, 1 is right side, 2 is bottom side, 3 is left side
     public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
@@ -170,7 +175,7 @@ public class GenerateChunks : MonoBehaviour
         int iChunk = 0;
         int incrementAmountNeighbor = 1;
         int incrementAmountChunk = 1;
-
+        Debug.Log(side);
         chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.MarkDynamic();
         if (side == 0)
         {
