@@ -11,8 +11,8 @@ public static class Noise
     public static float[,] GenerateNoiseMap(TerrainChunk chunk, int seed, int scale)
     {
         GameObject chunkGameObject = chunk.GetChunkGameObject();
-        int width = chunk.GetChunkSize() + 1 * chunk.GetChunkX();
-        int height = chunk.GetChunkSize() + 1;
+        int width = (chunk.GetChunkSize() + 1);
+        int height = (chunk.GetChunkSize() + 1);
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
         noiseMap = new float[width, height];
