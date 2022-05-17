@@ -155,7 +155,6 @@ public class GenerateChunks : MonoBehaviour
                 int side = 1;
                 if (x == chunkX - 1)
                 {
-
                     neighboringChunk = chunks[x, chunkZ];
                     side = 3;
                 }
@@ -198,20 +197,17 @@ public class GenerateChunks : MonoBehaviour
             iNeighborChunk = chunkSize;
         }
         //getting array of neighbor chunk vertices indexes
-        for (int i = iNeighborChunk; i < incrementAmountNeighbor * chunkSize; i += incrementAmountNeighbor)
+        for (int vertIndex = iNeighborChunk, i = 0; i < incrementAmountNeighbor * chunkSize; i += incrementAmountNeighbor)
         {
-            if (i != iNeighborChunk)
-            {
-                neighborVerticesIndex[i - iNeighborChunk] = i;
-            }
+            neighborVerticesIndex[i] = vertIndex;
+            i++;
+
         }
         //getting array of current chunk vertices indexes
-        for (int i = iChunk; i < incrementAmountChunk * chunkSize; i += incrementAmountChunk)
+        for (int vertIndex = iChunk, i = 0; i < incrementAmountChunk * chunkSize; i += incrementAmountChunk)
         {
-            if (i != iChunk)
-            {
-                neighborVerticesIndex[i - iChunk] = i;
-            }
+            chunkVerticesIndex[i] = vertIndex;
+            i++;
         }
         //using those arrays to fix offsets
         for (int i = 0; i < chunkSize; i++)
