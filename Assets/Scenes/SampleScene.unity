@@ -183,7 +183,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 219671366}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.93, y: 14.2, z: 5.88}
+  m_LocalPosition: {x: 2.57, y: 0, z: 16.72}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -222,8 +222,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   viewer: {fileID: 219671369}
-  viewDistanceInChunks: 5
-  chunkSize: 10
+  viewDistanceInChunks: 2
+  chunkSize: 50
   maxAmountOfChunks: 40
   chunkMaterial: {fileID: 2100000, guid: 72b3c8af953f54a9085ddbb1bb712c42, type: 2}
   resolution: 1
@@ -260,16 +260,20 @@ MonoBehaviour:
   - likelihood: 50
     heightMultiplier: 10
     noiseScale: 25
+    name: yeah
   - likelihood: 50
-    heightMultiplier: 30
+    heightMultiplier: 10
     noiseScale: 15
+    name: sure
   - likelihood: 50
-    heightMultiplier: 30
+    heightMultiplier: 10
     noiseScale: 5
+    name: idk
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 50
-  biomeDiversity: 0
+    name: ok
+  biomeDiversity: 50
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

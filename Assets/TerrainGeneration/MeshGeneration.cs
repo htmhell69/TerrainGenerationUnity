@@ -3,6 +3,10 @@ using UnityEngine;
 
 public static class MeshGeneration
 {
+
+
+
+
     public static void GenerateMesh(TerrainChunk chunk, float[,] heightmap)
     {
         GameObject gameObject = chunk.GetChunkGameObject();
@@ -55,6 +59,7 @@ public static class MeshGeneration
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = mesh;
     }
+
 
 
 }

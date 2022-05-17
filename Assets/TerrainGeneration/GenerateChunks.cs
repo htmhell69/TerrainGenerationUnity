@@ -54,8 +54,6 @@ public class GenerateChunks : MonoBehaviour
 
             Biome biome = biomeHandler.SelectBiome();
             currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, chunkMaterial, biome);
-
-
         }
         currentChunk.SetVisible(true);
         GenerateChunkDetails(currentChunk);
@@ -101,7 +99,6 @@ public class GenerateChunks : MonoBehaviour
                 visibleTerrainChunks.Add(chunks[x, z]);
             }
         }
-
     }
 
     public void GenerateChunkDetails(TerrainChunk chunk)
@@ -111,6 +108,7 @@ public class GenerateChunks : MonoBehaviour
         int chunkZ = chunk.GetChunkZ();
         ChunkData chunkData = GenerateChunkData(chunk);
         MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
+        FixBiomeOffsets(chunk);
     }
 
     ChunkData GenerateChunkData(TerrainChunk chunk)
@@ -120,11 +118,113 @@ public class GenerateChunks : MonoBehaviour
         return new ChunkData(noiseMap);
     }
 
-    Vector2Int GetChunkFromWorldPos(Vector3 worldPos)
+    public Vector2Int GetChunkFromWorldPos(Vector3 worldPos)
     {
         Vector2Int chunkPos = new Vector2Int(Mathf.FloorToInt(worldPos.x / chunkSize), Mathf.FloorToInt(worldPos.z / chunkSize));
         return chunkPos;
     }
+
+    public TerrainChunk GetChunkFromArray(int x, int y)
+    {
+        return chunks[x, y];
+    }
+
+    public void FixBiomeOffsets(TerrainChunk chunk)
+    {
+        int chunkX = chunk.GetChunkX();
+        int chunkZ = chunk.GetChunkZ();
+        for (int z = chunkZ; z < chunkZ + 1; z++)
+        {
+            TerrainChunk neighboringChunk = chunks[chunkX, z];
+            int side = 0;
+            if (z == chunkZ)
+            {
+                neighboringChunk = chunks[chunkX, z];
+                side = 2;
+            }
+            LerpVertices(neighboringChunk, chunk, side);
+        }
+        for (int x = chunkX; x < chunkX + 1; x++)
+        {
+            TerrainChunk neighboringChunk = chunks[x, chunkZ];
+            int side = 1;
+            if (x == chunkX)
+            {
+                neighboringChunk = chunks[x, chunkZ];
+                side = 3;
+            }
+            LerpVertices(neighboringChunk, chunk, side);
+        }
+        ReadjustMeshCollider(chunk);
+    }
+    //side 0 is top side, 1 is right side, 2 is bottom side, 3 is left side
+    public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
+    {
+        int[] neighborVerticesIndex = new int[chunkSize];
+        int[] chunkVerticesIndex = new int[chunkSize];
+
+        Vector3[] chunkVertices = chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
+        Vector3[] neighborChunkVertices = neighboringChunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
+
+        int iNeighborChunk = 0;
+        int iChunk = 0;
+        int incrementAmountNeighbor = 1;
+        int incrementAmountChunk = 1;
+        if (side == 0)
+        {
+            iChunk = chunkSize * chunkSize - 1;
+        }
+        else if (side == 1)
+        {
+            iChunk = chunkSize;
+            incrementAmountNeighbor = chunkSize;
+            incrementAmountChunk = chunkSize;
+        }
+        else if (side == 2)
+        {
+            iChunk = 0;
+            iNeighborChunk = chunkSize * chunkSize - 1;
+        }
+        else if (side == 3)
+        {
+            iNeighborChunk = chunkSize;
+        }
+        //getting array of neighbor chunk vertices indexes
+        for (int i = iNeighborChunk; i < incrementAmountNeighbor * chunkSize; i += incrementAmountNeighbor)
+        {
+            if (i != iNeighborChunk)
+            {
+                neighborVerticesIndex[i - iNeighborChunk] = i;
+            }
+        }
+        //getting array of current chunk vertices indexes
+        for (int i = iChunk; i < incrementAmountChunk * chunkSize; i += incrementAmountChunk)
+        {
+            if (i != iChunk)
+            {
+                neighborVerticesIndex[i - iChunk] = i;
+            }
+        }
+        //using those arrays to fix offsets
+        for (int i = 0; i < chunkSize; i++)
+        {
+            Vector3 neighborchunkVertice = neighborChunkVertices[neighborVerticesIndex[i]];
+            chunkVertices[chunkVerticesIndex[i]].y = neighborchunkVertice.y;
+        }
+    }
+
+    public void ReadjustMeshCollider(TerrainChunk chunk)
+    {
+        Mesh mesh = chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh;
+        MeshCollider meshCollider = chunk.GetChunkGameObject().GetComponent<MeshCollider>();
+
+        //fixing lighting issues
+        mesh.RecalculateBounds();
+        //readjusting collider
+        meshCollider.sharedMesh = null;
+        meshCollider.sharedMesh = mesh;
+    }
+
 }
 
 public class TerrainChunk

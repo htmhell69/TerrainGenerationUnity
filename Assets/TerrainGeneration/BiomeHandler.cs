@@ -77,6 +77,7 @@ public class Biome
     [SerializeField] int likelihood;
     [SerializeField] int heightMultiplier;
     [SerializeField] int noiseScale;
+    [SerializeField] string name;
     public int GetLikelihood()
     {
         return likelihood;
@@ -88,5 +89,10 @@ public class Biome
     public int GetNoiseScale()
     {
         return noiseScale;
+    }
+
+    public string GetName()
+    {
+        return name;
     }
 }
