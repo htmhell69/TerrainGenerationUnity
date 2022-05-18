@@ -106,10 +106,7 @@ public class GenerateChunks : MonoBehaviour
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
-        //Debug.Log("CHUNK DATA");
         ChunkData chunkData = GenerateChunkData(chunk);
-        //Debug.Log("HEIGHTMAP");
-        //Debug.Log(chunkData.getHeightMap()[0, 0]);
         MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
         FixBiomeOffsets(chunk);
         chunkGameObject.GetComponent<MeshFilter>().mesh.UploadMeshData(false);
@@ -139,7 +136,6 @@ public class GenerateChunks : MonoBehaviour
         int chunkZ = chunk.GetChunkZ();
         for (int z = chunkZ - 1; z <= chunkZ + 1; z += 2)
         {
-            Debug.Log("chunkZ = " + chunkZ);
             if (!(z < 0 || z >= maxAmountOfChunks))
             {
                 TerrainChunk neighboringChunk = chunks[chunkX, z];
@@ -153,13 +149,11 @@ public class GenerateChunks : MonoBehaviour
                     }
 
                     LerpVertices(chunk, neighboringChunk, side);
-                }
             }
-
         }
         for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
-            if (!(x < 0 || x >= maxAmountOfChunks))
+           if (!(x < 0 || x >= maxAmountOfChunks))
             {
                 TerrainChunk neighboringChunk = chunks[x, chunkZ];
                 if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
@@ -173,26 +167,24 @@ public class GenerateChunks : MonoBehaviour
 
                     LerpVertices(chunk, neighboringChunk, side);
                 }
-
-                ReadjustMeshCollider(chunk);
+                LerpVertices(neighboringChunk, neighboringChunk, side);
             }
+            ReadjustMeshCollider(chunk);
         }
     }
     //side 0 is top side, 1 is right side, 2 is bottom side, 3 is left side
     public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
     {
-        Debug.Log("side = " + side);
         int[] neighborVerticesIndex = new int[chunkSize];
         int[] chunkVerticesIndex = new int[chunkSize];
 
-        MeshFilter chunkMeshFilter = chunk.GetChunkGameObject().GetComponent<MeshFilter>();
-        Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
+        Vector3[] chunkVertices = chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
         Vector3[] neighborChunkVertices = neighboringChunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
         int iNeighborChunk = 0;
         int iChunk = 0;
         int incrementAmountNeighbor = 1;
         int incrementAmountChunk = 1;
-        chunkMeshFilter.mesh.MarkDynamic();
+        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.MarkDynamic();
         if (side == 0)
         {
             iChunk = chunkSize * chunkSize - 1;
@@ -213,29 +205,26 @@ public class GenerateChunks : MonoBehaviour
             iNeighborChunk = chunkSize;
         }
         //getting array of neighbor chunk vertices indexes
-        for (int vertIndex = iNeighborChunk, i = 0; i < incrementAmountNeighbor * chunkSize; vertIndex += incrementAmountNeighbor)
+        for (int vertIndex = iNeighborChunk, i = 0; i < incrementAmountNeighbor * chunkSize; i += incrementAmountNeighbor)
         {
-            Debug.Log("index for neighbor chunk = " + i);
             neighborVerticesIndex[i] = vertIndex;
             i++;
 
         }
         //getting array of current chunk vertices indexes
-        for (int vertIndex = iChunk, i = 0; i < incrementAmountChunk * chunkSize; vertIndex += incrementAmountChunk)
+        for (int vertIndex = iChunk, i = 0; i < incrementAmountChunk * chunkSize; i += incrementAmountChunk)
         {
             chunkVerticesIndex[i] = vertIndex;
             i++;
         }
 
-
         //using those arrays to fix offsets
         for (int i = 0; i < chunkSize; i++)
         {
-            Debug.Log("index for current chunk = " + i);
             Vector3 neighborchunkVertice = neighborChunkVertices[neighborVerticesIndex[i]];
             chunkVertices[chunkVerticesIndex[i]].y = neighborchunkVertice.y;
         }
-        chunkMeshFilter.mesh.vertices = chunkVertices;
+        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices = chunkVertices;
     }
 
     public void ReadjustMeshCollider(TerrainChunk chunk)
@@ -310,7 +299,6 @@ public struct ChunkData
 
     public ChunkData(float[,] heightMap)
     {
-        //Debug.Log(heightMap[0, 0]);
         this.heightMap = heightMap;
     }
     public float[,] getHeightMap()
@@ -318,3 +306,5 @@ public struct ChunkData
         return heightMap;
     }
 }
+
+
