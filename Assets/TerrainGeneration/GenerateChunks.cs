@@ -94,6 +94,7 @@ public class GenerateChunks : MonoBehaviour
                 {
                     break;
                 }
+
                 ModifyTerrainChunk(x, z);
                 visibleTerrainChunks.Add(chunks[x, z]);
             }
@@ -105,7 +106,10 @@ public class GenerateChunks : MonoBehaviour
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
+        //Debug.Log("CHUNK DATA");
         ChunkData chunkData = GenerateChunkData(chunk);
+        //Debug.Log("HEIGHTMAP");
+        //Debug.Log(chunkData.getHeightMap()[0, 0]);
         MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
         FixBiomeOffsets(chunk);
         chunkGameObject.GetComponent<MeshFilter>().mesh.UploadMeshData(false);
@@ -135,48 +139,60 @@ public class GenerateChunks : MonoBehaviour
         int chunkZ = chunk.GetChunkZ();
         for (int z = chunkZ - 1; z <= chunkZ + 1; z += 2)
         {
-            TerrainChunk neighboringChunk = chunks[chunkX, z];
-            if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
+            Debug.Log("chunkZ = " + chunkZ);
+            if (!(z < 0 || z >= maxAmountOfChunks))
             {
-                int side = 0;
-                if (z == chunkZ - 1)
+                TerrainChunk neighboringChunk = chunks[chunkX, z];
+                if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
                 {
-                    neighboringChunk = chunks[chunkX, z];
-                    side = 2;
+                    int side = 0;
+                    if (z == chunkZ - 1)
+                    {
+                        neighboringChunk = chunks[chunkX, z];
+                        side = 2;
+                    }
+
+                    LerpVertices(chunk, neighboringChunk, side);
                 }
-                LerpVertices(neighboringChunk, chunk, side);
             }
+
         }
         for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
-            TerrainChunk neighboringChunk = chunks[x, chunkZ];
-            if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
+            if (!(x < 0 || x >= maxAmountOfChunks))
             {
-                int side = 1;
-                if (x == chunkX - 1)
+                TerrainChunk neighboringChunk = chunks[x, chunkZ];
+                if (neighboringChunk != null && neighboringChunk.GetBiome().GetName() != chunk.GetBiome().GetName())
                 {
-                    neighboringChunk = chunks[x, chunkZ];
-                    side = 3;
+                    int side = 1;
+                    if (x == chunkX - 1)
+                    {
+                        neighboringChunk = chunks[x, chunkZ];
+                        side = 3;
+                    }
+
+                    LerpVertices(chunk, neighboringChunk, side);
                 }
-                LerpVertices(neighboringChunk, neighboringChunk, side);
+
+                ReadjustMeshCollider(chunk);
             }
-            ReadjustMeshCollider(chunk);
         }
     }
     //side 0 is top side, 1 is right side, 2 is bottom side, 3 is left side
     public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
     {
+        Debug.Log("side = " + side);
         int[] neighborVerticesIndex = new int[chunkSize];
         int[] chunkVerticesIndex = new int[chunkSize];
 
-        Vector3[] chunkVertices = chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
+        MeshFilter chunkMeshFilter = chunk.GetChunkGameObject().GetComponent<MeshFilter>();
+        Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
         Vector3[] neighborChunkVertices = neighboringChunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
         int iNeighborChunk = 0;
         int iChunk = 0;
         int incrementAmountNeighbor = 1;
         int incrementAmountChunk = 1;
-        Debug.Log(side);
-        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.MarkDynamic();
+        chunkMeshFilter.mesh.MarkDynamic();
         if (side == 0)
         {
             iChunk = chunkSize * chunkSize - 1;
@@ -197,25 +213,29 @@ public class GenerateChunks : MonoBehaviour
             iNeighborChunk = chunkSize;
         }
         //getting array of neighbor chunk vertices indexes
-        for (int vertIndex = iNeighborChunk, i = 0; i < incrementAmountNeighbor * chunkSize; i += incrementAmountNeighbor)
+        for (int vertIndex = iNeighborChunk, i = 0; i < incrementAmountNeighbor * chunkSize; vertIndex += incrementAmountNeighbor)
         {
+            Debug.Log("index for neighbor chunk = " + i);
             neighborVerticesIndex[i] = vertIndex;
             i++;
 
         }
         //getting array of current chunk vertices indexes
-        for (int vertIndex = iChunk, i = 0; i < incrementAmountChunk * chunkSize; i += incrementAmountChunk)
+        for (int vertIndex = iChunk, i = 0; i < incrementAmountChunk * chunkSize; vertIndex += incrementAmountChunk)
         {
             chunkVerticesIndex[i] = vertIndex;
             i++;
         }
+
+
         //using those arrays to fix offsets
         for (int i = 0; i < chunkSize; i++)
         {
+            Debug.Log("index for current chunk = " + i);
             Vector3 neighborchunkVertice = neighborChunkVertices[neighborVerticesIndex[i]];
             chunkVertices[chunkVerticesIndex[i]].y = neighborchunkVertice.y;
         }
-        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices = chunkVertices;
+        chunkMeshFilter.mesh.vertices = chunkVertices;
     }
 
     public void ReadjustMeshCollider(TerrainChunk chunk)
@@ -290,6 +310,7 @@ public struct ChunkData
 
     public ChunkData(float[,] heightMap)
     {
+        //Debug.Log(heightMap[0, 0]);
         this.heightMap = heightMap;
     }
     public float[,] getHeightMap()
@@ -297,5 +318,3 @@ public struct ChunkData
         return heightMap;
     }
 }
-
-

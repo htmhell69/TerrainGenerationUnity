@@ -27,6 +27,8 @@ public static class MeshGeneration
         {
             for (int x = 0; x <= chunkWidth; x++)
             {
+                //Debug.Log("X: " + x + " | Z: " + z);
+                //Debug.Log(heightmap.Length);
                 vertices[i] = new Vector3(x, heightmap[x, z] * heightMultiplier, z);
                 i++;
             }
