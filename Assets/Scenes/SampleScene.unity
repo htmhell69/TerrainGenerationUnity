@@ -223,7 +223,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   viewer: {fileID: 219671369}
   viewDistanceInChunks: 5
-  chunkSize: 13
+  chunkSize: 53
   maxAmountOfChunks: 40
   chunkMaterial: {fileID: 2100000, guid: 72b3c8af953f54a9085ddbb1bb712c42, type: 2}
   resolution: 1

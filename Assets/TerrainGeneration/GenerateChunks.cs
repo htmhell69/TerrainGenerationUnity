@@ -130,8 +130,9 @@ public class GenerateChunks : MonoBehaviour
         mesh.MarkDynamic();
         for (int z = chunkZ - 1, side = 2; z <= chunkZ + 1; z += 2)
         {
+
             //Debug.Log("current chunk = " + chunks[chunkX, z]);
-            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().GetName() != chunk.GetBiome().GetName())
+            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().GetName() != chunks[chunkX, z].GetBiome().GetName())
             {
                 LerpVertices(chunk, chunks[chunkX, z], side);
                 mesh.UploadMeshData(false);
@@ -143,7 +144,7 @@ public class GenerateChunks : MonoBehaviour
         {
 
             //Debug.Log("current chunk = " + chunks[x, chunkZ]);
-            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().GetName() != chunk.GetBiome().GetName())
+            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().GetName() != chunks[x, chunkZ].GetBiome().GetName())
             {
                 LerpVertices(chunk, chunks[x, chunkZ], side);
                 mesh.UploadMeshData(false);
@@ -167,7 +168,6 @@ public class GenerateChunks : MonoBehaviour
         int chunkIncrementAmount = 1;
         int neighboringChunkIncrementAmount = 1;
 
-        Debug.Log("side = " + side);
 
         if (side == 0)
         {
@@ -205,9 +205,10 @@ public class GenerateChunks : MonoBehaviour
             chunkVerticeIndexes[i] = chunkI;
             i++;
         }
-
         for (int i = 0; i < chunkSize; i++)
         {
+            Debug.Log("neighbor y = " + neighboringChunkMeshFilter.mesh.vertices[neighboringChunkVerticeIndexes[i]].y);
+            Debug.Log("chunk y = " + chunkVertices[chunkVerticeIndexes[i]].y);
             chunkVertices[chunkVerticeIndexes[i]].y =
             neighboringChunkMeshFilter.mesh.vertices[neighboringChunkVerticeIndexes[i]].y;
         }
