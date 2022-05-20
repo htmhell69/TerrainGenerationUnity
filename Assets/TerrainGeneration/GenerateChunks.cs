@@ -10,13 +10,15 @@ public class GenerateChunks : MonoBehaviour
     [SerializeField] Transform viewer;
     [SerializeField] int viewDistanceInChunks = 5;
     [Range(1, 250)]
-    [SerializeField] int chunkSize;
+    [SerializeField]
+    int chunkSize;
     [SerializeField] int maxAmountOfChunks;
     [SerializeField] Material chunkMaterial;
     [SerializeField] int resolution;
 
     [Header("Height Map Generation")]
-    [SerializeField] int seed;
+    [SerializeField]
+    int seed;
     BiomeHandler biomeHandler;
     int currentAmountOfChunks;
     Vector3 viewerPosition = new Vector3();
@@ -41,7 +43,7 @@ public class GenerateChunks : MonoBehaviour
         viewerPosition = viewer.position;
         if (isNewChunk)
         {
-
+            Debug.Log("new chunk");
             UpdateChunks();
         }
     }
@@ -53,9 +55,7 @@ public class GenerateChunks : MonoBehaviour
         {
             Biome biome = biomeHandler.SelectBiome();
             currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, chunkMaterial, biome);
-            Debug.Log("new chunk");
         }
-
         currentChunk.SetVisible(true);
         GenerateChunkDetails(currentChunk);
     }
@@ -96,11 +96,12 @@ public class GenerateChunks : MonoBehaviour
                 {
                     break;
                 }
+
+
                 ModifyTerrainChunk(x, z);
                 visibleTerrainChunks.Add(chunks[x, z]);
             }
         }
-        //adjusting all new chunks to each other
         for (int i = 0; i < visibleTerrainChunks.Count; i++)
         {
             AdjustNoiseScaling(visibleTerrainChunks[i]);
@@ -114,9 +115,9 @@ public class GenerateChunks : MonoBehaviour
         int chunkZ = chunk.GetChunkZ();
         ChunkData chunkData = GenerateChunkData(chunk);
         MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
-        //FixBiomeOffsets(chunk);
-        //chunkGameObject.GetComponent<MeshFilter>().mesh.UploadMeshData(false);
     }
+
+
     public void AdjustNoiseScaling(TerrainChunk chunk)
     {
         GameObject chunkGameObject = chunk.GetChunkGameObject();
@@ -127,46 +128,93 @@ public class GenerateChunks : MonoBehaviour
         Mesh mesh = meshFilter.mesh;
 
         mesh.MarkDynamic();
-        for (int z = chunkZ - 1; z < chunkZ + 1; z += 2)
+        for (int z = chunkZ - 1, side = 2; z <= chunkZ + 1; z += 2)
         {
-            Debug.Log("chunkZ = " + z + " chunkX = " + chunkX);
-            Debug.Log("check 1 = " + (z >= 0));
-            Debug.Log("check 2 = " + (z <= chunkSize));
-            Debug.Log("final check = " + (chunks[chunkX, z] != null));
-            Debug.Log("has passed = " + (chunkX > 0 && z <= chunkSize && chunks[chunkX, z] != null));
-            if (z >= 0 && z <= chunkSize && chunks[chunkX, z] != null)
+            //Debug.Log("current chunk = " + chunks[chunkX, z]);
+            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
-                Vector3[] verts = mesh.vertices;
-                for (int i = 0; i < verts.Length; i++)
-                {
-                    verts[i].y = 1;
-                }
-                mesh.vertices = verts;
+                LerpVertices(chunk, chunks[chunkX, z], side);
                 mesh.UploadMeshData(false);
             }
+            side -= 2;
         }
 
-        for (int x = chunkX - 1; x < chunkX + 1; x += 2)
+        for (int x = chunkX - 1, side = 3; x <= chunkX + 1; x += 2)
         {
-            Debug.Log("chunkX = " + x + " chunkZ = " + chunkZ);
-            Debug.Log("check 1 = " + (x >= 0));
-            Debug.Log("check 2 = " + (x <= chunkSize));
-            Debug.Log("final check = " + (chunks[x, chunkZ] != null));
-            Debug.Log("has passed = " + (x > 0 && x <= chunkSize && chunks[x, chunkZ] != null));
-            if (x >= 0 && x <= chunkSize && chunks[x, chunkZ] != null)
+
+            //Debug.Log("current chunk = " + chunks[x, chunkZ]);
+            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().GetName() != chunk.GetBiome().GetName())
             {
-                Vector3[] verts = mesh.vertices;
-                for (int i = 0; i < verts.Length; i++)
-                {
-                    verts[i].y = 1;
-                }
-                Debug.Log(verts.Length);
-                mesh.vertices = verts;
+                LerpVertices(chunk, chunks[x, chunkZ], side);
                 mesh.UploadMeshData(false);
             }
+            side -= 2;
         }
     }
 
+    public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, int side)
+    {
+        int[] neighboringChunkVerticeIndexes = new int[chunkSize + 1];
+        int[] chunkVerticeIndexes = new int[chunkSize + 1];
+        MeshFilter chunkMeshFilter = chunk.GetChunkGameObject().GetComponent<MeshFilter>();
+        MeshFilter neighboringChunkMeshFilter = neighboringChunk.GetChunkGameObject().GetComponent<MeshFilter>();
+        Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
+
+        int chunkX = chunk.GetChunkX();
+        int chunkZ = chunk.GetChunkZ();
+        int chunkStartingIndex = 0;
+        int neighboringChunkStartingIndex = 0;
+        int chunkIncrementAmount = 1;
+        int neighboringChunkIncrementAmount = 1;
+
+        Debug.Log("side = " + side);
+
+        if (side == 0)
+        {
+            chunkStartingIndex = ((chunkSize + 1) * chunkSize) + 1;
+        }
+        else if (side == 1)
+        {
+            chunkStartingIndex = chunkSize + 2;
+            chunkIncrementAmount = chunkSize + 1;
+            neighboringChunkIncrementAmount = chunkSize + 1;
+        }
+        else if (side == 2)
+        {
+            neighboringChunkStartingIndex = ((chunkSize + 1) * chunkSize) + 1;
+        }
+        else if (side == 3)
+        {
+            neighboringChunkStartingIndex = chunkSize + 2;
+            neighboringChunkIncrementAmount = chunkSize + 1;
+            chunkIncrementAmount = chunkSize + 1;
+        }
+
+
+        //getting neighboring chunk vertices
+        for (int chunkI = neighboringChunkStartingIndex, i = 0; chunkI < (neighboringChunkIncrementAmount * (chunkSize + 1))
+         + neighboringChunkStartingIndex; chunkI += neighboringChunkIncrementAmount)
+        {
+            neighboringChunkVerticeIndexes[i] = chunkI;
+            i++;
+        }
+
+        for (int chunkI = chunkStartingIndex, i = 0; chunkI < (chunkIncrementAmount * (chunkSize + 1))
+         + chunkStartingIndex; chunkI += chunkIncrementAmount)
+        {
+            chunkVerticeIndexes[i] = chunkI;
+            i++;
+        }
+
+        for (int i = 0; i < chunkSize; i++)
+        {
+            chunkVertices[chunkVerticeIndexes[i]].y =
+            neighboringChunkMeshFilter.mesh.vertices[neighboringChunkVerticeIndexes[i]].y;
+        }
+
+        chunkMeshFilter.mesh.vertices = chunkVertices;
+        chunkMeshFilter.mesh.UploadMeshData(false);
+    }
     ChunkData GenerateChunkData(TerrainChunk chunk)
     {
         Biome currentBiome = chunk.GetBiome();
