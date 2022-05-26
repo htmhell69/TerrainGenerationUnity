@@ -26,7 +26,6 @@ public class GenerateChunks : MonoBehaviour
     List<TerrainChunk> visibleTerrainChunks = new List<TerrainChunk>();
 
 
-
     void Start()
     {
         verticeSize = chunkSize + 1;
@@ -47,6 +46,7 @@ public class GenerateChunks : MonoBehaviour
             Debug.Log("new chunk");
             UpdateChunks();
         }
+        
 
     }
 
@@ -226,30 +226,41 @@ public class GenerateChunks : MonoBehaviour
         corneringChunks[0] = startingChunk;
         if(side == new Vector2(0,0))
         {
-            vertexIndexes[0] = 0;
-            vertexIndexes[1] = xZToIndex(0, chunkSize, verticeSize);
-            vertexIndexes[2] = xZToIndex(chunkSize, chunkSize, verticeSize);
-            vertexIndexes[3] = xZToIndex(chunkSize, chunkSize, verticeSize);
-        } else if(side == new Vector2(1,0))
+            vertexIndexes[0] = GetCornerIndex(0,0);
+            vertexIndexes[1] = GetCornerIndex(0,1);
+            vertexIndexes[2] = GetCornerIndex(1,1);
+            vertexIndexes[3] = GetCornerIndex(1,0);
+        } 
+        else if(side == new Vector2(1,0))
         {
-            vertexIndexes[0] = xZToIndex(chunkSize, 0, verticeSize);
-            vertexIndexes[1] = xZToIndex(chunkSize, chunkSize, verticeSize);
-            vertexIndexes[2] = xZToIndex(0, chunkSize, verticeSize);
-            vertexIndexes[3] = xZToIndex();
-        } else if(side == new Vector2(0,1))
+            vertexIndexes[0] = GetCornerIndex(1,0);
+            vertexIndexes[1] = GetCornerIndex(1,1);
+            vertexIndexes[2] = GetCornerIndex(0,1);
+            vertexIndexes[3] = GetCornerIndex(0,0);
+        } 
+        else if(side == new Vector2(0,1))
         {
-
-        } else if(side == new Vector2(1,1))
+            vertexIndexes[0] = GetCornerIndex(0,1);
+            vertexIndexes[1] = GetCornerIndex(0,0);
+            vertexIndexes[2] = GetCornerIndex(1,0);
+            vertexIndexes[3] = GetCornerIndex(1,1);
+        } 
+        else if(side == new Vector2(1,1))
         {
-
+            vertexIndexes[0] = GetCornerIndex(1,1);
+            vertexIndexes[1] = GetCornerIndex(0,1);
+            vertexIndexes[2] = GetCornerIndex(0,0);
+            vertexIndexes[3] = GetCornerIndex(1,0);
         }
         int xChunkModifier = 1;
         int zChunkModifier = 1;
 
-        if(side.x == 0){
+        if(side.x == 0)
+        {
             xChunkModifier = -1;
         }
-        if(side.y == 0){
+        if(side.y == 0)
+        {
             zChunkModifier = -1;
         }
 
@@ -259,6 +270,29 @@ public class GenerateChunks : MonoBehaviour
 
     } 
 
+    public int GetCornerIndex(int x, int z){
+        if(x == 0 && z == 0)
+        {
+            return 0;
+        } 
+        else if(x == 1 && z == 0) 
+        {
+            return chunkSize;
+        } 
+        else if(x == 0 && z == 1)
+        {
+            return xZToIndex(0, chunkSize, verticeSize);
+        } 
+        else if(x == 1 && z == 1)
+        {
+            return xZToIndex(chunkSize, chunkSize, verticeSize);
+        } 
+        else 
+        {
+            Debug.LogError("please give a correct side value you gave " + x + "," + z);
+            return 0;
+        }
+    }
 
 
     public int xZToIndex(int x, int z, int xSize = 0)
@@ -300,6 +334,8 @@ public class GenerateChunks : MonoBehaviour
     }
 
 }
+
+
 
 public class TerrainChunk
 {
