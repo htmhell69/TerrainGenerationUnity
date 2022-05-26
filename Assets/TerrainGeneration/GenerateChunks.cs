@@ -21,6 +21,7 @@ public class GenerateChunks : MonoBehaviour
     int currentAmountOfChunks;
     Vector3 viewerPosition = new Vector3();
     int chunksVisible;
+    int verticeSize;
 
     List<TerrainChunk> visibleTerrainChunks = new List<TerrainChunk>();
 
@@ -28,6 +29,7 @@ public class GenerateChunks : MonoBehaviour
 
     void Start()
     {
+        verticeSize = chunkSize + 1;
         chunks = new TerrainChunk[maxAmountOfChunks, maxAmountOfChunks];
         seed = Random.Range(0, 999999);
         viewer.position = new Vector3((maxAmountOfChunks * chunkSize) / 2, 100, (maxAmountOfChunks * chunkSize) / 2);   
@@ -160,7 +162,6 @@ public class GenerateChunks : MonoBehaviour
 
     public void LerpVertices(TerrainChunk chunk, TerrainChunk neighboringChunk, Vector2Int side)
     {
-        Debug.Log("chunk is correct");
         MeshFilter chunkMeshFilter = chunk.GetChunkGameObject().GetComponent<MeshFilter>();
         MeshFilter neighboringChunkMeshFilter = neighboringChunk.GetChunkGameObject().GetComponent<MeshFilter>();
         Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
@@ -180,17 +181,18 @@ public class GenerateChunks : MonoBehaviour
     public int[] GetSideVertexesOfChunk(TerrainChunk chunk, Vector2Int side)
     {
         MeshFilter meshFilter = chunk.GetChunkGameObject().GetComponent<MeshFilter>();
-        int chunkStartingIndex = 0;
+        int chunkStartingIndex = 1;
         int chunkIncrementAmount = 1;
-        int[] vertices = new int[chunkSize + 1];
+        int[] vertices = new int[chunkSize - 1];
+        //these loops will not be affecting the edges so some of these number may look odd. Edges is for another method.
         if (side == Vector2Int.up)
         {
-            chunkStartingIndex = xZToIndex(0, chunkSize, chunkSize + 1);
+            chunkStartingIndex = xZToIndex(1, chunkSize, verticeSize);
         }
         else if (side == Vector2Int.right)
         {
-            chunkStartingIndex = xZToIndex(chunkSize, 0, chunkSize + 1);
-            chunkIncrementAmount = xZToIndex(0, 1, chunkSize + 1);
+            chunkStartingIndex = xZToIndex(chunkSize, 1, verticeSize);
+            chunkIncrementAmount = xZToIndex(0, 1, verticeSize);
         }
         else if (side == Vector2Int.down)
         {
@@ -198,10 +200,11 @@ public class GenerateChunks : MonoBehaviour
         }
         else if (side == Vector2Int.left)
         {
-            chunkIncrementAmount = xZToIndex(0, 1, chunkSize + 1);
+            chunkStartingIndex = verticeSize;
+            chunkIncrementAmount = xZToIndex(0, 1, verticeSize);
         }
 
-        for (int chunkI = chunkStartingIndex, i = 0; chunkI < (chunkIncrementAmount * (chunkSize + 1))
+        for (int chunkI = chunkStartingIndex, i = 0; chunkI < (chunkIncrementAmount * (chunkSize - 1))
          + chunkStartingIndex; chunkI += chunkIncrementAmount)
         {
             vertices[i] = chunkI;
@@ -210,6 +213,53 @@ public class GenerateChunks : MonoBehaviour
 
         return vertices;
     }
+
+    void FixCornerVerticesOffset(){
+        
+    }
+
+    int GetCentralCornerVertices(TerrainChunk startingChunk, Vector2 side){
+        TerrainChunk[] corneringChunks = new TerrainChunk[4];
+        int[] vertexIndexes = new int[4];
+        int chunkX = startingChunk.GetChunkX();
+        int chunkZ = startingChunk.GetChunkZ();
+        corneringChunks[0] = startingChunk;
+        if(side == new Vector2(0,0))
+        {
+            vertexIndexes[0] = 0;
+            vertexIndexes[1] = xZToIndex(0, chunkSize, verticeSize);
+            vertexIndexes[2] = xZToIndex(chunkSize, chunkSize, verticeSize);
+            vertexIndexes[3] = xZToIndex(chunkSize, chunkSize, verticeSize);
+        } else if(side == new Vector2(1,0))
+        {
+            vertexIndexes[0] = xZToIndex(chunkSize, 0, verticeSize);
+            vertexIndexes[1] = xZToIndex(chunkSize, chunkSize, verticeSize);
+            vertexIndexes[2] = xZToIndex(0, chunkSize, verticeSize);
+            vertexIndexes[3] = xZToIndex();
+        } else if(side == new Vector2(0,1))
+        {
+
+        } else if(side == new Vector2(1,1))
+        {
+
+        }
+        int xChunkModifier = 1;
+        int zChunkModifier = 1;
+
+        if(side.x == 0){
+            xChunkModifier = -1;
+        }
+        if(side.y == 0){
+            zChunkModifier = -1;
+        }
+
+        corneringChunks[1] = chunks[chunkX, chunkZ + zChunkModifier];
+        corneringChunks[2] = chunks[chunkX + xChunkModifier, chunkZ + zChunkModifier];
+        corneringChunks[3] = chunks[chunkX + xChunkModifier, chunkZ];
+
+    } 
+
+
 
     public int xZToIndex(int x, int z, int xSize = 0)
     {
