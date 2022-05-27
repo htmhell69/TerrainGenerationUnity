@@ -257,15 +257,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isEnabled: 1
   biomes:
-  - likelihood: 50
+  - likelihood: 100
     heightMultiplier: 10
     noiseScale: 25
     name: yeah
-  - likelihood: 50
+  - likelihood: 100
     heightMultiplier: 10
     noiseScale: 15
     name: sure
-  - likelihood: 50
+  - likelihood: 100
     heightMultiplier: 10
     noiseScale: 5
     name: idk
@@ -273,7 +273,7 @@ MonoBehaviour:
     heightMultiplier: 10
     noiseScale: 50
     name: ok
-  biomeDiversity: 50
+  biomeDiversity: 100
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
