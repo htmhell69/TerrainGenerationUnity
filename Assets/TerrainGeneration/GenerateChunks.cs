@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Jobs;
-
+using Unity.Collections;
 public class GenerateChunks : MonoBehaviour
 {
     [Header("Chunks")]
@@ -21,8 +21,10 @@ public class GenerateChunks : MonoBehaviour
     Vector3 viewerPosition = new Vector3();
     int chunksVisible;
     int verticeSize;
-
     List<TerrainChunk> visibleTerrainChunks = new List<TerrainChunk>();
+    List<GetMeshData> meshJobData = new List<GetMeshData>();
+    List<JobHandle> meshJob = new List<JobHandle>();
+
 
 
     void Start()
@@ -36,6 +38,19 @@ public class GenerateChunks : MonoBehaviour
 
     void Update()
     {
+        for (int i = 0; i < meshJob.Count; i++)
+        {
+            if (meshJob[i].IsCompleted)
+            {
+                meshJob[i].Complete();
+                TerrainChunk currentChunk = chunks[meshJobData[i].chunkData.chunkPosition.x,
+                meshJobData[i].chunkData.chunkPosition.y];
+                Debug.Log("noiseMap value is " + meshJobData[i].noiseMap[0]);
+                PostMeshGeneration(currentChunk, meshJobData[i].meshData);
+                meshJob.RemoveAt(i);
+                meshJobData.RemoveAt(i);
+            }
+        }
         Vector2Int oldChunkPosition = GetChunkFromWorldPos(viewerPosition);
         Vector2Int newChunkPosition = GetChunkFromWorldPos(viewer.position);
         bool isNewChunk = oldChunkPosition != newChunkPosition;
@@ -43,14 +58,14 @@ public class GenerateChunks : MonoBehaviour
         if (isNewChunk)
         {
             Debug.Log("new chunk");
-            StartCoroutine(UpdateChunks());
+            UpdateChunks();
         }
-
 
     }
 
-    public IEnumerator UpdateChunks()
+    public void UpdateChunks()
     {
+
         int chunkX = Mathf.FloorToInt(viewerPosition.x / chunkSize);
         int chunkZ = Mathf.FloorToInt(viewerPosition.z / chunkSize);
 
@@ -87,16 +102,7 @@ public class GenerateChunks : MonoBehaviour
                 }
                 ModifyTerrainChunk(x, z);
                 visibleTerrainChunks.Add(chunks[x, z]);
-                yield return null;
             }
-        }
-        for (int i = 0; i < visibleTerrainChunks.Count; i++)
-        {
-            AdjustNoiseScaling(visibleTerrainChunks[i]);
-            FixCornerVerticesOffset(visibleTerrainChunks[i]);
-            Vector3[] vertices = visibleTerrainChunks[i].GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
-            yield return null;
-            ApplyColorsToChunk(visibleTerrainChunks[i], vertices);
         }
     }
     public void ModifyTerrainChunk(int chunkX, int chunkZ)
@@ -110,22 +116,34 @@ public class GenerateChunks : MonoBehaviour
         }
         currentChunk.SetVisible(true);
     }
+
+    public void PostMeshGeneration(TerrainChunk chunk, MeshData meshData)
+    {
+        Mesh mesh = new Mesh();
+        mesh.vertices = meshData.vertices.ToArray();
+        mesh.triangles = meshData.triangles.ToArray();
+        mesh.uv = meshData.uvs.ToArray();
+
+        AdjustNoiseScaling(chunk);
+        FixCornerVerticesOffset(chunk);
+        chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh = mesh;
+        mesh.UploadMeshData(false);
+        ApplyColorsToChunk(chunk, mesh.vertices);
+    }
     public void ApplyColorsToChunk(TerrainChunk chunk, Vector3[] vertices)
     {
-        TerrainColor[] terrainColors = chunk.GetBiome().GetTerrainColors();
+        TerrainColor[] terrainColors = chunk.GetBiome().terrainColors;
         Color[] colorMap = new Color[verticeSize * verticeSize];
-        Debug.Log(vertices.Length);
         for (int z = 0; z < verticeSize; z++)
         {
             for (int x = 0; x < verticeSize; x++)
             {
                 float currentHeight = vertices[z * verticeSize + x].y;
-                Debug.Log(currentHeight);
                 for (int i = 0; i < terrainColors.Length; i++)
                 {
-                    if (currentHeight <= terrainColors[i].GetHeight())
+                    if (currentHeight <= terrainColors[i].height)
                     {
-                        colorMap[z * verticeSize + x] = terrainColors[i].GetColor();
+                        colorMap[z * verticeSize + x] = terrainColors[i].color;
                         break;
                     }
                 }
@@ -143,16 +161,14 @@ public class GenerateChunks : MonoBehaviour
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
-        ChunkData chunkData = GenerateChunkData(chunk);
-        MeshGeneration.GenerateMesh(chunk, chunkData.getHeightMap());
+        ChunkData chunkData = new ChunkData(new Vector2Int(chunkX, chunkZ), chunkGameObject.transform.position,
+        seed, chunkSize, chunk.GetBiome().noiseScale, chunk.GetBiome().heightMultiplier);
+        GetMeshData job = new GetMeshData(chunkData);
+        meshJobData.Add(job);
+        meshJob.Add(job.Schedule());
     }
 
-    ChunkData GenerateChunkData(TerrainChunk chunk)
-    {
-        Biome currentBiome = chunk.GetBiome();
-        float[,] noiseMap = Noise.GenerateNoiseMap(chunk, seed, currentBiome.GetNoiseScale());
-        return new ChunkData(noiseMap);
-    }
+
 
     public void AdjustNoiseScaling(TerrainChunk chunk)
     {
@@ -165,10 +181,9 @@ public class GenerateChunks : MonoBehaviour
         Vector2Int side = new Vector2Int(0, -1);
         for (int z = chunkZ - 1; z <= chunkZ + 1; z += 2)
         {
-            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().GetName() != chunks[chunkX, z].GetBiome().GetName())
+            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().id != chunks[chunkX, z].GetBiome().id)
             {
                 LerpVertices(chunk, chunks[chunkX, z], side);
-                mesh.UploadMeshData(false);
             }
             side *= -1;
         }
@@ -177,10 +192,9 @@ public class GenerateChunks : MonoBehaviour
         for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
 
-            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().GetName() != chunks[x, chunkZ].GetBiome().GetName())
+            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().id != chunks[x, chunkZ].GetBiome().id)
             {
                 LerpVertices(chunk, chunks[x, chunkZ], side);
-                mesh.UploadMeshData(false);
             }
             side *= -1;
         }
@@ -202,7 +216,6 @@ public class GenerateChunks : MonoBehaviour
             chunkVertices[chunkVerticeIndexes[i]].y = neighboringChunkMeshFilter.mesh.vertices[neighboringChunkVertexIndexes[i]].y;
         }
         chunkMeshFilter.mesh.vertices = chunkVertices;
-        chunkMeshFilter.mesh.UploadMeshData(false);
     }
     public int[] GetSideVertexesOfChunk(TerrainChunk chunk, Vector2Int side)
     {
@@ -290,7 +303,6 @@ public class GenerateChunks : MonoBehaviour
             Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
             chunkVertices[vertices[index].GetVerticeIndex()].y = newHeightValue;
             chunkMeshFilter.mesh.vertices = chunkVertices;
-            chunkMeshFilter.mesh.UploadMeshData(false);
             ReadjustMeshCollider(chunks[chunkX, chunkZ]);
         }
     }
@@ -499,20 +511,49 @@ public class TerrainChunk
 public struct ChunkData
 {
     //this will have more than height map later on 
-    float[,] heightMap;
-
-    public ChunkData(float[,] heightMap)
+    public Vector2Int chunkPosition;
+    public Vector3 worldPosition;
+    public int seed;
+    public int chunkSize;
+    public int biomeScale;
+    public int biomeHeightMultiplier;
+    public ChunkData(Vector2Int chunkPosition, Vector3 worldPosition, int seed, int chunkSize, int biomeNoiseScale, int biomeHeightMultiplier)
     {
-        this.heightMap = heightMap;
-    }
-    public float[,] getHeightMap()
-    {
-        return heightMap;
+        this.chunkPosition = chunkPosition;
+        this.worldPosition = worldPosition;
+        this.seed = seed;
+        this.chunkSize = chunkSize;
+        this.biomeScale = biomeNoiseScale;
+        this.biomeHeightMultiplier = biomeHeightMultiplier;
     }
 }
 
-public struct GetChunkData : IJob
+public struct GetMeshData : IJob
 {
+    public ChunkData chunkData;
+    public NativeArray<float> noiseMap;
+    public MeshData meshData;
+    public void Execute()
+    {
+        noiseMap = Noise.GenerateNoiseMap(chunkData);
+        meshData = MeshGeneration.GenerateMesh(chunkData, noiseMap);
+    }
+
+    public GetMeshData(ChunkData chunkData)
+    {
+        this.chunkData = chunkData;
+        this.meshData = new MeshData(new NativeArray<Vector3>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.TempJob),
+        new NativeArray<Vector2>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.TempJob),
+        new NativeArray<int>(chunkData.chunkSize * chunkData.chunkSize * 6, Allocator.TempJob));
+        this.noiseMap = new NativeArray<float>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.TempJob);
+    }
+
+}
+
+public struct GetColorMap : IJob
+{
+    public float[,] noiseMap;
+    public Color[] colorMap;
     public void Execute()
     {
 

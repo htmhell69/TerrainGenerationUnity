@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using Unity.Collections;
 public class BiomeHandler : MonoBehaviour
 {
-    [SerializeField] bool isEnabled;
     [SerializeField] Biome[] biomes;
     [Range(1, 100)]
     [SerializeField] int biomeDiversity;
@@ -12,14 +12,14 @@ public class BiomeHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        if (isEnabled && biomes.Length != 0)
+        if (biomes.Length != 0)
         {
             bool hasFoundBiome = false;
             int biomeIndex = 0;
             while (!hasFoundBiome)
             {
                 biomeIndex = UnityEngine.Random.Range(0, biomes.Length);
-                if (UnityEngine.Random.Range(0, 1) < (float)biomes[biomeIndex].GetLikelihood() / 100)
+                if (UnityEngine.Random.Range(0, 1) < (float)biomes[biomeIndex].likelihood / 100)
                 {
                     hasFoundBiome = true;
                     currentBiome = biomes[biomeIndex];
@@ -33,13 +33,9 @@ public class BiomeHandler : MonoBehaviour
     {
 
     }
-    public bool IsEnabled()
-    {
-        return isEnabled;
-    }
     public Biome SelectBiome()
     {
-        if (isEnabled || biomes.Length == 0)
+        if (biomes.Length != 0)
         {
             if (UnityEngine.Random.Range(0, 1) < (float)biomeDiversity / 100)
             {
@@ -48,7 +44,7 @@ public class BiomeHandler : MonoBehaviour
                 while (!hasFoundBiome)
                 {
                     biomeIndex = UnityEngine.Random.Range(0, biomes.Length);
-                    if (UnityEngine.Random.Range(0, 1) < (float)biomes[biomeIndex].GetLikelihood() / 100)
+                    if (UnityEngine.Random.Range(0, 1) < (float)biomes[biomeIndex].likelihood / 100)
                     {
                         hasFoundBiome = true;
                         currentBiome = biomes[biomeIndex];
@@ -63,7 +59,7 @@ public class BiomeHandler : MonoBehaviour
         }
         else
         {
-            return null;
+            return new Biome();
         }
     }
 
@@ -71,54 +67,24 @@ public class BiomeHandler : MonoBehaviour
 
 }
 [System.Serializable]
-public class Biome
+public struct Biome
 {
     [Range(1, 100)]
-    [SerializeField] int likelihood;
-    [SerializeField] int heightMultiplier;
-    [SerializeField] int noiseScale;
-    [SerializeField] string name;
-    [SerializeField] TerrainColor[] terrainColors;
-
-    public int GetLikelihood()
-    {
-        return likelihood;
-    }
-    public int GetHeightMultiplier()
-    {
-        return heightMultiplier;
-    }
-    public int GetNoiseScale()
-    {
-        return noiseScale;
-    }
-
-    public string GetName()
-    {
-        return name;
-    }
-    public TerrainColor[] GetTerrainColors()
-    {
-        return terrainColors;
-    }
+    public int likelihood;
+    public int heightMultiplier;
+    public int noiseScale;
+    public int id;
+    public TerrainColor[] terrainColors;
 }
 [System.Serializable]
-public class TerrainColor
+public struct TerrainColor
 {
-    [SerializeField] float height;
-    [SerializeField] Color color;
-    public Color GetColor()
-    {
-        return color;
-    }
-    public float GetHeight()
-    {
-        return height;
-    }
+    public float height;
+    public Color color;
 }
 
 [System.Serializable]
-public class Details
+public struct Details
 {
     [Range(1, 100)]
     [SerializeField] int likelihood;

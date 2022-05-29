@@ -1,34 +1,26 @@
 using UnityEngine;
-
+using Unity.Collections;
 
 public static class MeshGeneration
 {
 
-
-
-
-    public static void GenerateMesh(TerrainChunk chunk, float[,] heightmap)
+    public static MeshData GenerateMesh(ChunkData chunkData, NativeArray<float> heightmap)
     {
-        GameObject gameObject = chunk.GetChunkGameObject();
-        Mesh mesh = new Mesh();
-        MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
-        MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
-        int chunkWidth = chunk.GetChunkSize();
-        int chunkHeight = chunk.GetChunkSize();
-        int[] triangles = new int[chunkWidth * chunkHeight * 6];
-        Vector3[] vertices = new Vector3[(chunkWidth + 1) * (chunkHeight + 1)];
-        Vector2[] uvs = new Vector2[(chunkWidth + 1) * (chunkHeight + 1)];
+        int chunkWidth = chunkData.chunkSize;
+        int chunkHeight = chunkData.chunkSize;
+        NativeArray<int> triangles = new NativeArray<int>(chunkData.chunkSize * chunkData.chunkSize * 6, Allocator.Temp);
+        NativeArray<Vector3> vertices = new NativeArray<Vector3>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.Temp);
+        NativeArray<Vector2> uvs = new NativeArray<Vector2>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.Temp);
         int tris = 0;
         int vert = 0;
-        meshFilter.mesh = mesh;
 
-        int heightMultiplier = chunk.GetBiome().GetHeightMultiplier();
+        int heightMultiplier = chunkData.biomeHeightMultiplier;
 
         for (int i = 0, z = 0; z <= chunkHeight; z++)
         {
             for (int x = 0; x <= chunkWidth; x++)
             {
-                vertices[i] = new Vector3(x, heightmap[x, z] * heightMultiplier, z);
+                vertices[i] = new Vector3(x, heightmap[z * chunkHeight + x] * heightMultiplier, z);
                 uvs[i] = new Vector2(x / (float)chunkWidth, z / (float)chunkHeight);
                 i++;
             }
@@ -52,14 +44,20 @@ public static class MeshGeneration
             vert++;
         }
 
-
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.uv = uvs;
-        //fixing lighting issues
-        mesh.RecalculateNormals();
-        //readjusting collider
-        meshCollider.sharedMesh = null;
-        meshCollider.sharedMesh = mesh;
+        return new MeshData(vertices, uvs, triangles);
     }
+}
+
+public struct MeshData
+{
+    public NativeArray<Vector3> vertices;
+    public NativeArray<Vector2> uvs;
+    public NativeArray<int> triangles;
+    public MeshData(NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<int> triangles)
+    {
+        this.vertices = vertices;
+        this.uvs = uvs;
+        this.triangles = triangles;
+    }
+
 }
