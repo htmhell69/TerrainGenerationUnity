@@ -78,6 +78,8 @@ public class Biome
     [SerializeField] int heightMultiplier;
     [SerializeField] int noiseScale;
     [SerializeField] string name;
+    [SerializeField] TerrainColor[] terrainColors;
+
     public int GetLikelihood()
     {
         return likelihood;
@@ -95,4 +97,31 @@ public class Biome
     {
         return name;
     }
+    public TerrainColor[] GetTerrainColors()
+    {
+        return terrainColors;
+    }
+}
+[System.Serializable]
+public class TerrainColor
+{
+    [SerializeField] float height;
+    [SerializeField] Color color;
+    public Color GetColor()
+    {
+        return color;
+    }
+    public float GetHeight()
+    {
+        return height;
+    }
+}
+
+[System.Serializable]
+public class Details
+{
+    [Range(1, 100)]
+    [SerializeField] int likelihood;
+    //will show up anwhere lower than this height
+    [SerializeField] int height;
 }

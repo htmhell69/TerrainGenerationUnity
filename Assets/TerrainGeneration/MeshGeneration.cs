@@ -17,6 +17,7 @@ public static class MeshGeneration
         int chunkHeight = chunk.GetChunkSize();
         int[] triangles = new int[chunkWidth * chunkHeight * 6];
         Vector3[] vertices = new Vector3[(chunkWidth + 1) * (chunkHeight + 1)];
+        Vector2[] uvs = new Vector2[(chunkWidth + 1) * (chunkHeight + 1)];
         int tris = 0;
         int vert = 0;
         meshFilter.mesh = mesh;
@@ -27,9 +28,8 @@ public static class MeshGeneration
         {
             for (int x = 0; x <= chunkWidth; x++)
             {
-                //Debug.Log("X: " + x + " | Z: " + z);
-                //Debug.Log(heightmap.Length);
                 vertices[i] = new Vector3(x, heightmap[x, z] * heightMultiplier, z);
+                uvs[i] = new Vector2(x / (float)chunkWidth, z / (float)chunkHeight);
                 i++;
             }
         }
@@ -55,13 +55,11 @@ public static class MeshGeneration
 
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.uv = uvs;
         //fixing lighting issues
-        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
         //readjusting collider
         meshCollider.sharedMesh = null;
         meshCollider.sharedMesh = mesh;
     }
-
-
-
 }

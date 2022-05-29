@@ -225,7 +225,7 @@ MonoBehaviour:
   viewDistanceInChunks: 5
   chunkSize: 53
   maxAmountOfChunks: 40
-  chunkMaterial: {fileID: 2100000, guid: 72b3c8af953f54a9085ddbb1bb712c42, type: 2}
+  rowMultiplier: 0
   resolution: 1
   seed: 0
 --- !u!4 &336273892
@@ -260,19 +260,63 @@ MonoBehaviour:
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 25
-    name: yeah
+    name: plains
+    terrainColors:
+    - height: 1
+      color: {r: 0.13725488, g: 0.20346053, b: 0.83137256, a: 0}
+    - height: 2
+      color: {r: 0.2735849, g: 0.18355997, b: 0.17937878, a: 0}
+    - height: 4
+      color: {r: 0.27986985, g: 0.8490566, b: 0.15619439, a: 0}
+    - height: 8
+      color: {r: 0.1792453, g: 0.17163582, b: 0.17163582, a: 0}
+    - height: 10
+      color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 15
-    name: sure
+    name: hills
+    terrainColors:
+    - height: 1
+      color: {r: 0.13725488, g: 0.20346053, b: 0.83137256, a: 0}
+    - height: 2
+      color: {r: 0.2735849, g: 0.18355997, b: 0.17937878, a: 0}
+    - height: 4
+      color: {r: 0.27986985, g: 0.8490566, b: 0.15619439, a: 0}
+    - height: 8
+      color: {r: 0.1792453, g: 0.17163582, b: 0.17163582, a: 0}
+    - height: 10
+      color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 5
-    name: idk
+    name: mountains
+    terrainColors:
+    - height: 1
+      color: {r: 0.13725488, g: 0.20346053, b: 0.83137256, a: 0}
+    - height: 2
+      color: {r: 0.2735849, g: 0.18355997, b: 0.17937878, a: 0}
+    - height: 4
+      color: {r: 0.27986985, g: 0.8490566, b: 0.15619439, a: 0}
+    - height: 8
+      color: {r: 0.1792453, g: 0.17163582, b: 0.17163582, a: 0}
+    - height: 10
+      color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
-    noiseScale: 50
-    name: ok
+    noiseScale: 100
+    name: desert
+    terrainColors:
+    - height: 1
+      color: {r: 0.13725488, g: 0.20346053, b: 0.83137256, a: 0}
+    - height: 2
+      color: {r: 0.2735849, g: 0.18355997, b: 0.17937878, a: 0}
+    - height: 4
+      color: {r: 0.27986985, g: 0.8490566, b: 0.15619439, a: 0}
+    - height: 8
+      color: {r: 0.1792453, g: 0.17163582, b: 0.17163582, a: 0}
+    - height: 10
+      color: {r: 1, g: 1, b: 1, a: 0}
   biomeDiversity: 100
 --- !u!1 &705507993
 GameObject:

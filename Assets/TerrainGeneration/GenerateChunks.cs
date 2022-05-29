@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Unity.Jobs;
 
 public class GenerateChunks : MonoBehaviour
 {
@@ -13,7 +13,6 @@ public class GenerateChunks : MonoBehaviour
     [SerializeField] int chunkSize;
     [SerializeField] int maxAmountOfChunks;
     [SerializeField] int rowMultiplier;
-    [SerializeField] Material chunkMaterial;
     [SerializeField] int resolution;
     [Header("Height Map Generation")]
     [SerializeField] int seed;
@@ -44,13 +43,13 @@ public class GenerateChunks : MonoBehaviour
         if (isNewChunk)
         {
             Debug.Log("new chunk");
-            UpdateChunks();
+            StartCoroutine(UpdateChunks());
         }
 
 
     }
 
-    public void UpdateChunks()
+    public IEnumerator UpdateChunks()
     {
         int chunkX = Mathf.FloorToInt(viewerPosition.x / chunkSize);
         int chunkZ = Mathf.FloorToInt(viewerPosition.z / chunkSize);
@@ -86,16 +85,18 @@ public class GenerateChunks : MonoBehaviour
                 {
                     break;
                 }
-
-
                 ModifyTerrainChunk(x, z);
                 visibleTerrainChunks.Add(chunks[x, z]);
+                yield return null;
             }
         }
         for (int i = 0; i < visibleTerrainChunks.Count; i++)
         {
             AdjustNoiseScaling(visibleTerrainChunks[i]);
             FixCornerVerticesOffset(visibleTerrainChunks[i]);
+            Vector3[] vertices = visibleTerrainChunks[i].GetChunkGameObject().GetComponent<MeshFilter>().mesh.vertices;
+            yield return null;
+            ApplyColorsToChunk(visibleTerrainChunks[i], vertices);
         }
     }
     public void ModifyTerrainChunk(int chunkX, int chunkZ)
@@ -104,12 +105,37 @@ public class GenerateChunks : MonoBehaviour
         if (currentChunk == null)
         {
             Biome biome = biomeHandler.SelectBiome();
-            currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, chunkMaterial, biome);
+            currentChunk = chunks[chunkX, chunkZ] = new TerrainChunk(new Vector2(chunkX * chunkSize, chunkZ * chunkSize), chunkSize, chunkX, chunkZ, biome);
             GenerateChunkDetails(currentChunk);
         }
         currentChunk.SetVisible(true);
     }
+    public void ApplyColorsToChunk(TerrainChunk chunk, Vector3[] vertices)
+    {
+        TerrainColor[] terrainColors = chunk.GetBiome().GetTerrainColors();
+        Color[] colorMap = new Color[verticeSize * verticeSize];
+        Debug.Log(vertices.Length);
+        for (int z = 0; z < verticeSize; z++)
+        {
+            for (int x = 0; x < verticeSize; x++)
+            {
+                float currentHeight = vertices[z * verticeSize + x].y;
+                Debug.Log(currentHeight);
+                for (int i = 0; i < terrainColors.Length; i++)
+                {
+                    if (currentHeight <= terrainColors[i].GetHeight())
+                    {
+                        colorMap[z * verticeSize + x] = terrainColors[i].GetColor();
+                        break;
+                    }
+                }
+            }
+        }
 
+        MeshRenderer textureRenderer = chunk.GetChunkGameObject().GetComponent<MeshRenderer>();
+        Texture2D texture = ApplyingTextures.TextureFromColorMap(colorMap, verticeSize, verticeSize);
+        textureRenderer.sharedMaterial.mainTexture = texture;
+    }
 
 
     public void GenerateChunkDetails(TerrainChunk chunk)
@@ -230,13 +256,11 @@ public class GenerateChunks : MonoBehaviour
         List<int> chunksToModify = new List<int>();
         for (int i = 0; i < vertices.Length; i++)
         {
-            Debug.Log("vertice at " + i + " is " + vertices[i]);
             if (vertices[i] != null)
             {
                 chunksToModify.Add(i);
             }
         }
-        Debug.Log("amount to modify is " + chunksToModify.Count);
 
 
         float[] heightValues = new float[chunksToModify.Count];
@@ -264,7 +288,7 @@ public class GenerateChunks : MonoBehaviour
             int chunkZ = vertices[index].GetChunk().y;
             MeshFilter chunkMeshFilter = chunks[chunkX, chunkZ].GetChunkGameObject().GetComponent<MeshFilter>();
             Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
-            chunkVertices[vertices[index].GetVerticeIndex()].y = 99999;
+            chunkVertices[vertices[index].GetVerticeIndex()].y = newHeightValue;
             chunkMeshFilter.mesh.vertices = chunkVertices;
             chunkMeshFilter.mesh.UploadMeshData(false);
             ReadjustMeshCollider(chunks[chunkX, chunkZ]);
@@ -429,7 +453,7 @@ public class TerrainChunk
     int chunkSize;
     Biome biome;
 
-    public TerrainChunk(Vector2 chunkPosition, int size, int chunkX, int chunkY, Material material, Biome biome)
+    public TerrainChunk(Vector2 chunkPosition, int size, int chunkX, int chunkY, Biome biome)
     {
         chunkObject = new GameObject("chunk");
         chunkObject.AddComponent<MeshRenderer>();
@@ -438,7 +462,7 @@ public class TerrainChunk
         x = chunkX;
         z = chunkY;
         chunkObject.transform.position = new Vector3(chunkPosition.x, 0, chunkPosition.y);
-        chunkObject.GetComponent<MeshRenderer>().material = material;
+        chunkObject.GetComponent<MeshRenderer>().material = new Material(Shader.Find("Specular"));
         chunkObject.SetActive(false);
         chunkSize = size;
         this.biome = biome;
@@ -484,5 +508,13 @@ public struct ChunkData
     public float[,] getHeightMap()
     {
         return heightMap;
+    }
+}
+
+public struct GetChunkData : IJob
+{
+    public void Execute()
+    {
+
     }
 }
