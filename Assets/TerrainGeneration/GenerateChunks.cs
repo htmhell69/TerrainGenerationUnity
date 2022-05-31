@@ -210,7 +210,7 @@ public class GenerateChunks : MonoBehaviour
         Vector2Int side = new Vector2Int(0, -1);
         for (int z = chunkZ - 1; z <= chunkZ + 1; z += 2)
         {
-            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().GetName() != chunks[chunkX, z].GetBiome().GetName())
+            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().id != chunks[chunkX, z].GetBiome().id)
             {
                 LerpVertices(chunk, chunks[chunkX, z], side);
                 mesh.UploadMeshData(false);
@@ -222,7 +222,7 @@ public class GenerateChunks : MonoBehaviour
         for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
 
-            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().GetName() != chunks[x, chunkZ].GetBiome().GetName())
+            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().id != chunks[x, chunkZ].GetBiome().id)
             {
                 LerpVertices(chunk, chunks[x, chunkZ], side);
                 mesh.UploadMeshData(false);
