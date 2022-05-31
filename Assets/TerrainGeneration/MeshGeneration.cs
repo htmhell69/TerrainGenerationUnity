@@ -4,13 +4,11 @@ using Unity.Collections;
 public static class MeshGeneration
 {
 
-    public static MeshData GenerateMesh(ChunkData chunkData, NativeArray<float> heightmap)
+    public static MeshData GenerateMesh(ChunkData chunkData, NativeArray<float> heightmap, NativeArray<int> triangles,
+    NativeArray<Vector3> vertices, NativeArray<Vector2> uvs)
     {
         int chunkWidth = chunkData.chunkSize;
         int chunkHeight = chunkData.chunkSize;
-        NativeArray<int> triangles = new NativeArray<int>(chunkData.chunkSize * chunkData.chunkSize * 6, Allocator.Temp);
-        NativeArray<Vector3> vertices = new NativeArray<Vector3>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.Temp);
-        NativeArray<Vector2> uvs = new NativeArray<Vector2>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.Temp);
         int tris = 0;
         int vert = 0;
 
@@ -46,6 +44,8 @@ public static class MeshGeneration
 
         return new MeshData(vertices, uvs, triangles);
     }
+
+
 }
 
 public struct MeshData

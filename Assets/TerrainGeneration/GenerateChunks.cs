@@ -24,6 +24,7 @@ public class GenerateChunks : MonoBehaviour
     List<TerrainChunk> visibleTerrainChunks = new List<TerrainChunk>();
     List<GetMeshData> meshJobData = new List<GetMeshData>();
     List<JobHandle> meshJob = new List<JobHandle>();
+    List<TerrainChunk> toBeAdjusted = new List<TerrainChunk>();
 
 
 
@@ -38,19 +39,8 @@ public class GenerateChunks : MonoBehaviour
 
     void Update()
     {
-        for (int i = 0; i < meshJob.Count; i++)
-        {
-            if (meshJob[i].IsCompleted)
-            {
-                meshJob[i].Complete();
-                TerrainChunk currentChunk = chunks[meshJobData[i].chunkData.chunkPosition.x,
-                meshJobData[i].chunkData.chunkPosition.y];
-                Debug.Log("noiseMap value is " + meshJobData[i].noiseMap[0]);
-                PostMeshGeneration(currentChunk, meshJobData[i].meshData);
-                meshJob.RemoveAt(i);
-                meshJobData.RemoveAt(i);
-            }
-        }
+        JobHandling();
+
         Vector2Int oldChunkPosition = GetChunkFromWorldPos(viewerPosition);
         Vector2Int newChunkPosition = GetChunkFromWorldPos(viewer.position);
         bool isNewChunk = oldChunkPosition != newChunkPosition;
@@ -60,8 +50,46 @@ public class GenerateChunks : MonoBehaviour
             Debug.Log("new chunk");
             UpdateChunks();
         }
-
     }
+    public void JobHandling()
+    {
+        for (int i = 0; i < meshJob.Count; i++)
+        {
+            if (meshJob[i].IsCompleted)
+            {
+                meshJob[i].Complete();
+                TerrainChunk currentChunk = chunks[meshJobData[i].chunkData.chunkPosition.x,
+                meshJobData[i].chunkData.chunkPosition.y];
+                PostMeshGeneration(currentChunk, meshJobData[i].meshData);
+                toBeAdjusted.Add(currentChunk);
+                meshJobData[i].noiseMap.Dispose();
+                meshJobData[i].meshData.vertices.Dispose();
+                meshJobData[i].meshData.triangles.Dispose();
+                meshJobData[i].meshData.uvs.Dispose();
+                meshJob.RemoveAt(i);
+                meshJobData.RemoveAt(i);
+            }
+        }
+
+        if (toBeAdjusted.Count != 0 && meshJob.Count == 0 && meshJobData.Count == 0)
+        {
+            while (toBeAdjusted.Count > 0)
+            {
+                TerrainChunk currentChunk = toBeAdjusted[0];
+                Debug.Log(currentChunk.GetChunkX() + "," + currentChunk.GetChunkZ());
+                Mesh mesh = currentChunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh;
+                AdjustNoiseScaling(currentChunk);
+                FixCornerVerticesOffset(currentChunk);
+                mesh.UploadMeshData(false);
+                ApplyColorsToChunk(currentChunk, mesh.vertices);
+                ReadjustMeshCollider(currentChunk);
+
+                toBeAdjusted.RemoveAt(0);
+            }
+
+        }
+    }
+
 
     public void UpdateChunks()
     {
@@ -123,12 +151,9 @@ public class GenerateChunks : MonoBehaviour
         mesh.vertices = meshData.vertices.ToArray();
         mesh.triangles = meshData.triangles.ToArray();
         mesh.uv = meshData.uvs.ToArray();
-
-        AdjustNoiseScaling(chunk);
-        FixCornerVerticesOffset(chunk);
         chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh = mesh;
         mesh.UploadMeshData(false);
-        ApplyColorsToChunk(chunk, mesh.vertices);
+        ReadjustMeshCollider(chunk);
     }
     public void ApplyColorsToChunk(TerrainChunk chunk, Vector3[] vertices)
     {
@@ -163,7 +188,11 @@ public class GenerateChunks : MonoBehaviour
         int chunkZ = chunk.GetChunkZ();
         ChunkData chunkData = new ChunkData(new Vector2Int(chunkX, chunkZ), chunkGameObject.transform.position,
         seed, chunkSize, chunk.GetBiome().noiseScale, chunk.GetBiome().heightMultiplier);
-        GetMeshData job = new GetMeshData(chunkData);
+        NativeArray<Vector3> vertices = new NativeArray<Vector3>(verticeSize * verticeSize, Allocator.Persistent);
+        NativeArray<Vector2> uvs = new NativeArray<Vector2>(verticeSize * verticeSize, Allocator.Persistent);
+        NativeArray<int> triangles = new NativeArray<int>(chunkSize * chunkSize * 6, Allocator.Persistent);
+        NativeArray<float> noiseMap = new NativeArray<float>(verticeSize * verticeSize, Allocator.Persistent);
+        GetMeshData job = new GetMeshData(chunkData, vertices, uvs, triangles, noiseMap);
         meshJobData.Add(job);
         meshJob.Add(job.Schedule());
     }
@@ -174,6 +203,7 @@ public class GenerateChunks : MonoBehaviour
     {
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
+
         int chunkZ = chunk.GetChunkZ();
         Biome biome = chunk.GetBiome();
         MeshFilter meshFilter = chunkGameObject.GetComponent<MeshFilter>();
@@ -191,7 +221,6 @@ public class GenerateChunks : MonoBehaviour
         side = new Vector2Int(-1, 0);
         for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
-
             if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().id != chunks[x, chunkZ].GetBiome().id)
             {
                 LerpVertices(chunk, chunks[x, chunkZ], side);
@@ -214,6 +243,7 @@ public class GenerateChunks : MonoBehaviour
         for (int i = 0; i < chunkVerticeIndexes.Length; i++)
         {
             chunkVertices[chunkVerticeIndexes[i]].y = neighboringChunkMeshFilter.mesh.vertices[neighboringChunkVertexIndexes[i]].y;
+
         }
         chunkMeshFilter.mesh.vertices = chunkVertices;
     }
@@ -263,8 +293,6 @@ public class GenerateChunks : MonoBehaviour
 
     void AdjustCorner(TerrainChunk chunk, Vector2Int side)
     {
-
-
         ChunkVertice[] vertices = GetCentralCornerVertices(chunk, side);
         List<int> chunksToModify = new List<int>();
         for (int i = 0; i < vertices.Length; i++)
@@ -535,18 +563,24 @@ public struct GetMeshData : IJob
     public MeshData meshData;
     public void Execute()
     {
-        noiseMap = Noise.GenerateNoiseMap(chunkData);
-        meshData = MeshGeneration.GenerateMesh(chunkData, noiseMap);
+        for (int z = 0; z < chunkData.chunkSize + 1; z++)
+        {
+            for (int x = 0; x < chunkData.chunkSize + 1; x++)
+            {
+                noiseMap[z * (chunkData.chunkSize + 1) + x] = Noise.GetNoiseValue(chunkData, x, z);
+            }
+        }
+        MeshData temporaryMeshData = MeshGeneration.GenerateMesh(chunkData, noiseMap, meshData.triangles, meshData.vertices, meshData.uvs);
+        meshData = temporaryMeshData;
     }
 
-    public GetMeshData(ChunkData chunkData)
+    public GetMeshData(ChunkData chunkData, NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<int> triangles, NativeArray<float> noiseMap)
     {
         this.chunkData = chunkData;
-        this.meshData = new MeshData(new NativeArray<Vector3>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.TempJob),
-        new NativeArray<Vector2>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.TempJob),
-        new NativeArray<int>(chunkData.chunkSize * chunkData.chunkSize * 6, Allocator.TempJob));
-        this.noiseMap = new NativeArray<float>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1), Allocator.TempJob);
+        this.meshData = new MeshData(vertices, uvs, triangles);
+        this.noiseMap = noiseMap;
     }
+
 
 }
 
