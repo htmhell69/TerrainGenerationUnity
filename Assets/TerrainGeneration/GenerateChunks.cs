@@ -203,7 +203,6 @@ public class GenerateChunks : MonoBehaviour
     {
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
-
         int chunkZ = chunk.GetChunkZ();
         Biome biome = chunk.GetBiome();
         MeshFilter meshFilter = chunkGameObject.GetComponent<MeshFilter>();
@@ -211,9 +210,10 @@ public class GenerateChunks : MonoBehaviour
         Vector2Int side = new Vector2Int(0, -1);
         for (int z = chunkZ - 1; z <= chunkZ + 1; z += 2)
         {
-            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().id != chunks[chunkX, z].GetBiome().id)
+            if (z >= 0 && z < maxAmountOfChunks && chunks[chunkX, z] != null && chunk.GetBiome().GetName() != chunks[chunkX, z].GetBiome().GetName())
             {
                 LerpVertices(chunk, chunks[chunkX, z], side);
+                mesh.UploadMeshData(false);
             }
             side *= -1;
         }
@@ -221,9 +221,11 @@ public class GenerateChunks : MonoBehaviour
         side = new Vector2Int(-1, 0);
         for (int x = chunkX - 1; x <= chunkX + 1; x += 2)
         {
-            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().id != chunks[x, chunkZ].GetBiome().id)
+
+            if (x >= 0 && x < maxAmountOfChunks && chunks[x, chunkZ] != null && chunk.GetBiome().GetName() != chunks[x, chunkZ].GetBiome().GetName())
             {
                 LerpVertices(chunk, chunks[x, chunkZ], side);
+                mesh.UploadMeshData(false);
             }
             side *= -1;
         }
@@ -243,9 +245,9 @@ public class GenerateChunks : MonoBehaviour
         for (int i = 0; i < chunkVerticeIndexes.Length; i++)
         {
             chunkVertices[chunkVerticeIndexes[i]].y = neighboringChunkMeshFilter.mesh.vertices[neighboringChunkVertexIndexes[i]].y;
-
         }
         chunkMeshFilter.mesh.vertices = chunkVertices;
+        chunkMeshFilter.mesh.UploadMeshData(false);
     }
     public int[] GetSideVertexesOfChunk(TerrainChunk chunk, Vector2Int side)
     {
@@ -293,15 +295,19 @@ public class GenerateChunks : MonoBehaviour
 
     void AdjustCorner(TerrainChunk chunk, Vector2Int side)
     {
+
+
         ChunkVertice[] vertices = GetCentralCornerVertices(chunk, side);
         List<int> chunksToModify = new List<int>();
         for (int i = 0; i < vertices.Length; i++)
         {
+            Debug.Log("vertice at " + i + " is " + vertices[i]);
             if (vertices[i] != null)
             {
                 chunksToModify.Add(i);
             }
         }
+        Debug.Log("amount to modify is " + chunksToModify.Count);
 
 
         float[] heightValues = new float[chunksToModify.Count];
@@ -331,6 +337,7 @@ public class GenerateChunks : MonoBehaviour
             Vector3[] chunkVertices = chunkMeshFilter.mesh.vertices;
             chunkVertices[vertices[index].GetVerticeIndex()].y = newHeightValue;
             chunkMeshFilter.mesh.vertices = chunkVertices;
+            chunkMeshFilter.mesh.UploadMeshData(false);
             ReadjustMeshCollider(chunks[chunkX, chunkZ]);
         }
     }
