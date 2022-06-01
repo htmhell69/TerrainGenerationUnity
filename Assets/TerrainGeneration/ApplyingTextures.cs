@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Unity.Collections;
 public class ApplyingTextures
 {
     public static Texture2D TextureFromColorMap(Color[] colourMap, int width, int height)
@@ -30,5 +30,32 @@ public class ApplyingTextures
         }
 
         return TextureFromColorMap(colorMap, width, height);
+    }
+
+    public static NativeArray<Color> GenerateColorMap(NativeArray<TerrainColor> terrainColors, NativeArray<float> noiseMap, NativeArray<Color> colorMap, int verticeSize)
+    {
+        for (int z = 0; z < verticeSize; z++)
+        {
+            for (int x = 0; x < verticeSize; x++)
+            {
+                float currentHeight = noiseMap[z * verticeSize + x];
+                for (int i = 0; i < terrainColors.Length; i++)
+                {
+                    if (currentHeight <= terrainColors[i].height)
+                    {
+                        colorMap[z * verticeSize + x] = terrainColors[i].color;
+                        break;
+                    }
+                }
+            }
+        }
+        return colorMap;
+    }
+
+    public static void ApplyTextureToChunk(Color[] colorMap, TerrainChunk chunk, int verticeSize)
+    {
+        MeshRenderer textureRenderer = chunk.GetChunkGameObject().GetComponent<MeshRenderer>();
+        Texture2D texture = ApplyingTextures.TextureFromColorMap(colorMap, verticeSize, verticeSize);
+        textureRenderer.sharedMaterial.mainTexture = texture;
     }
 }

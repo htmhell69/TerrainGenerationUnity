@@ -27,12 +27,6 @@ public class BiomeHandler : MonoBehaviour
             }
         }
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
     public Biome SelectBiome()
     {
         if (biomes.Length != 0)
@@ -63,7 +57,15 @@ public class BiomeHandler : MonoBehaviour
         }
     }
 
-
+    public NativeArray<TerrainColor> terrainColorsArrayToNativeArray(TerrainColor[] terrainColors)
+    {
+        NativeArray<TerrainColor> nativeTerrainColors = new NativeArray<TerrainColor>(terrainColors.Length, Allocator.Persistent);
+        for (int i = 0; i < terrainColors.Length; i++)
+        {
+            nativeTerrainColors[i] = terrainColors[i];
+        }
+        return nativeTerrainColors;
+    }
 
 }
 [System.Serializable]

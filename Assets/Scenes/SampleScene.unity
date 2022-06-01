@@ -260,40 +260,54 @@ MonoBehaviour:
     heightMultiplier: 10
     noiseScale: 25
     id: 1
-    terrainColors: []
+    terrainColors:
+    - height: 1
+      color: {r: 0, g: 0.1551485, b: 1, a: 0}
+    - height: 4
+      color: {r: 0.24957967, g: 1, b: 0, a: 0}
+    - height: 10
+      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
+    - height: 50
+      color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 15
     id: 2
     terrainColors:
-    - height: 0
+    - height: 1
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
-    - height: 25
+    - height: 4
       color: {r: 0.24957967, g: 1, b: 0, a: 0}
+    - height: 10
+      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
     - height: 50
-      color: {r: 0.2264151, g: 0.21253115, b: 0.21253115, a: 0}
+      color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 5
     id: 3
     terrainColors:
-    - height: 0
+    - height: 1
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
-    - height: 25
+    - height: 4
       color: {r: 0.24957967, g: 1, b: 0, a: 0}
+    - height: 10
+      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
     - height: 50
-      color: {r: 0.2264151, g: 0.21253115, b: 0.21253115, a: 0}
+      color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 100
     id: 3
     terrainColors:
-    - height: 0
+    - height: 1
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
-    - height: 25
+    - height: 4
       color: {r: 0.24957967, g: 1, b: 0, a: 0}
+    - height: 10
+      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
     - height: 50
-      color: {r: 0.2264151, g: 0.21253115, b: 0.21253115, a: 0}
+      color: {r: 1, g: 1, b: 1, a: 0}
   biomeDiversity: 100
 --- !u!1 &705507993
 GameObject:
