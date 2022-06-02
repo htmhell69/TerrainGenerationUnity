@@ -261,54 +261,46 @@ MonoBehaviour:
     noiseScale: 25
     id: 1
     terrainColors:
-    - height: 1
+    - height: 2
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
-    - height: 4
+    - height: 5
       color: {r: 0.24957967, g: 1, b: 0, a: 0}
-    - height: 10
-      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
-    - height: 50
+    - height: 8
+      color: {r: 0.6415094, g: 0.6142755, b: 0.6142755, a: 0}
+    - height: 150
       color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 15
     id: 2
     terrainColors:
-    - height: 1
-      color: {r: 0, g: 0.1551485, b: 1, a: 0}
-    - height: 4
-      color: {r: 0.24957967, g: 1, b: 0, a: 0}
+    - height: 2
+      color: {r: 0.9433962, g: 0.93155247, b: 0.17354932, a: 0}
+    - height: 5
+      color: {r: 0.1358285, g: 1, b: 0, a: 0}
     - height: 10
-      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
-    - height: 50
+      color: {r: 0.6415094, g: 0.6142755, b: 0.6142755, a: 0}
+    - height: 150
       color: {r: 1, g: 1, b: 1, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 5
     id: 3
     terrainColors:
-    - height: 1
-      color: {r: 0, g: 0.1551485, b: 1, a: 0}
     - height: 4
-      color: {r: 0.24957967, g: 1, b: 0, a: 0}
-    - height: 10
-      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
-    - height: 50
-      color: {r: 1, g: 1, b: 1, a: 0}
+      color: {r: 0.4528302, g: 0.32806164, b: 0.16447133, a: 0}
+    - height: 150
+      color: {r: 0.6431373, g: 0.6156863, b: 0.6156863, a: 0}
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 100
     id: 3
     terrainColors:
-    - height: 1
+    - height: 2
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
-    - height: 4
-      color: {r: 0.24957967, g: 1, b: 0, a: 0}
-    - height: 10
-      color: {r: 0.4433962, g: 0.43293875, b: 0.43293875, a: 0}
-    - height: 50
-      color: {r: 1, g: 1, b: 1, a: 0}
-  biomeDiversity: 100
+    - height: 100
+      color: {r: 1, g: 0.9666666, b: 0, a: 0}
+  biomeDiversity: 20
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

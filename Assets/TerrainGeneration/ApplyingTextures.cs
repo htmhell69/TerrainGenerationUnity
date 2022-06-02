@@ -32,13 +32,13 @@ public class ApplyingTextures
         return TextureFromColorMap(colorMap, width, height);
     }
 
-    public static NativeArray<Color> GenerateColorMap(NativeArray<TerrainColor> terrainColors, NativeArray<float> noiseMap, NativeArray<Color> colorMap, int verticeSize)
+    public static NativeArray<Color> GenerateColorMap(NativeArray<TerrainColor> terrainColors, NativeArray<Vector3> vertices, NativeArray<Color> colorMap, int verticeSize)
     {
         for (int z = 0; z < verticeSize; z++)
         {
             for (int x = 0; x < verticeSize; x++)
             {
-                float currentHeight = noiseMap[z * verticeSize + x];
+                float currentHeight = vertices[z * verticeSize + x].y;
                 for (int i = 0; i < terrainColors.Length; i++)
                 {
                     if (currentHeight <= terrainColors[i].height)

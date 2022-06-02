@@ -25,8 +25,6 @@ public class GenerateChunks : MonoBehaviour
     List<GetMeshData> meshJobData = new List<GetMeshData>();
     List<JobHandle> meshJob = new List<JobHandle>();
     List<TerrainChunk> toBeAdjusted = new List<TerrainChunk>();
-    List<GetColorMap> colorJobData = new List<GetColorMap>();
-    List<JobHandle> colorJob = new List<JobHandle>();
 
 
 
@@ -62,9 +60,10 @@ public class GenerateChunks : MonoBehaviour
                 meshJob[i].Complete();
                 TerrainChunk currentChunk = chunks[meshJobData[i].chunkData.chunkPosition.x,
                 meshJobData[i].chunkData.chunkPosition.y];
-                currentChunk.SetNoiseMap(meshJobData[i].noiseMap);
-                PostMeshGeneration(currentChunk, meshJobData[i].meshData);
+                PostMeshGeneration(currentChunk, meshJobData[i].meshData, meshJobData[i].colorMap.ToArray());
                 toBeAdjusted.Add(currentChunk);
+                meshJobData[i].terrainColors.Dispose();
+                meshJobData[i].colorMap.Dispose();
                 meshJobData[i].noiseMap.Dispose();
                 meshJobData[i].meshData.vertices.Dispose();
                 meshJobData[i].meshData.triangles.Dispose();
@@ -74,18 +73,6 @@ public class GenerateChunks : MonoBehaviour
             }
         }
 
-        for (int i = 0; i < colorJob.Count; i++)
-        {
-            if (colorJob[i].IsCompleted)
-            {
-                colorJob[i].Complete();
-                TerrainChunk currentChunk = chunks[colorJobData[i].chunkPosition.x,
-                colorJobData[i].chunkPosition.y];
-                ApplyingTextures.ApplyTextureToChunk(colorJobData[i].colorMap.ToArray(), currentChunk, verticeSize);
-                colorJob.RemoveAt(i);
-                colorJobData.RemoveAt(i);
-            }
-        }
 
         if (toBeAdjusted.Count != 0 && meshJob.Count == 0 && meshJobData.Count == 0)
         {
@@ -97,12 +84,9 @@ public class GenerateChunks : MonoBehaviour
                 FixCornerVerticesOffset(currentChunk);
                 mesh.UploadMeshData(false);
                 ReadjustMeshCollider(currentChunk);
-                NativeArray<Color> colorMap = new NativeArray<Color>(verticeSize * verticeSize, Allocator.Persistent);
-                colorJobData.Add(new GetColorMap(verticeSize, new Vector2(currentChunk.GetChunkX(), currentChunk.GetChunkZ()), currentChunk.GetNoiseMap(),
-                ));
                 toBeAdjusted.RemoveAt(0);
-            }
 
+            }
         }
     }
 
@@ -162,7 +146,7 @@ public class GenerateChunks : MonoBehaviour
         currentChunk.SetVisible(true);
     }
 
-    public void PostMeshGeneration(TerrainChunk chunk, MeshData meshData)
+    public void PostMeshGeneration(TerrainChunk chunk, MeshData meshData, Color[] colorMap)
     {
         Mesh mesh = new Mesh();
         mesh.vertices = meshData.vertices.ToArray();
@@ -170,6 +154,7 @@ public class GenerateChunks : MonoBehaviour
         mesh.uv = meshData.uvs.ToArray();
         chunk.GetChunkGameObject().GetComponent<MeshFilter>().mesh = mesh;
         mesh.UploadMeshData(false);
+        ApplyingTextures.ApplyTextureToChunk(colorMap, chunk, verticeSize);
         ReadjustMeshCollider(chunk);
     }
 
@@ -184,9 +169,21 @@ public class GenerateChunks : MonoBehaviour
         NativeArray<Vector2> uvs = new NativeArray<Vector2>(verticeSize * verticeSize, Allocator.Persistent);
         NativeArray<int> triangles = new NativeArray<int>(chunkSize * chunkSize * 6, Allocator.Persistent);
         NativeArray<float> noiseMap = new NativeArray<float>(verticeSize * verticeSize, Allocator.Persistent);
-        GetMeshData job = new GetMeshData(chunkData, vertices, uvs, triangles, noiseMap);
+        NativeArray<Color> colorMap = new NativeArray<Color>(verticeSize * verticeSize, Allocator.Persistent);
+        NativeArray<TerrainColor> terrainColors = TerrainColorArrayToNative(chunk.GetBiome().terrainColors);
+        GetMeshData job = new GetMeshData(chunkData, vertices, uvs, triangles, noiseMap, colorMap, terrainColors);
         meshJobData.Add(job);
         meshJob.Add(job.Schedule());
+    }
+
+    public NativeArray<TerrainColor> TerrainColorArrayToNative(TerrainColor[] terrainColors)
+    {
+        NativeArray<TerrainColor> nativeTerrainColors = new NativeArray<TerrainColor>(terrainColors.Length, Allocator.Persistent);
+        for (int i = 0; i < terrainColors.Length; i++)
+        {
+            nativeTerrainColors[i] = terrainColors[i];
+        }
+        return nativeTerrainColors;
     }
 
 
@@ -528,16 +525,6 @@ public class TerrainChunk
         return biome;
     }
 
-    public NativeArray<float> GetNoiseMap()
-    {
-        return noiseMap;
-    }
-
-    public void SetNoiseMap(NativeArray<float> noiseMap)
-    {
-        this.noiseMap = noiseMap;
-    }
-
 }
 
 public struct ChunkData
@@ -565,6 +552,8 @@ public struct GetMeshData : IJob
     public ChunkData chunkData;
     public NativeArray<float> noiseMap;
     public MeshData meshData;
+    public NativeArray<Color> colorMap;
+    public NativeArray<TerrainColor> terrainColors;
     public void Execute()
     {
         for (int z = 0; z < chunkData.chunkSize + 1; z++)
@@ -576,35 +565,24 @@ public struct GetMeshData : IJob
         }
         MeshData temporaryMeshData = MeshGeneration.GenerateMesh(chunkData, noiseMap, meshData.triangles, meshData.vertices, meshData.uvs);
         meshData = temporaryMeshData;
+        colorMap = ApplyingTextures.GenerateColorMap(terrainColors, meshData.vertices, colorMap, chunkData.chunkSize + 1);
     }
 
-    public GetMeshData(ChunkData chunkData, NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<int> triangles, NativeArray<float> noiseMap)
+    public GetMeshData(ChunkData chunkData, NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<int> triangles, NativeArray<float> noiseMap, NativeArray<Color> colorMap, NativeArray<TerrainColor> terrainColors)
     {
         this.chunkData = chunkData;
         this.meshData = new MeshData(vertices, uvs, triangles);
         this.noiseMap = noiseMap;
-    }
-
-
-}
-
-public struct GetColorMap : IJob
-{
-    public Vector2Int chunkPosition;
-    public int size;
-    public NativeArray<float> noiseMap;
-    public NativeArray<Color> colorMap;
-    public NativeArray<TerrainColor> terrainColors;
-    public GetColorMap(int verticeSize, Vector2Int chunkPosition, NativeArray<float> noiseMap, NativeArray<Color> colorMap, NativeArray<TerrainColor> terrainColors)
-    {
-        this.size = verticeSize;
-        this.noiseMap = noiseMap;
         this.colorMap = colorMap;
-        this.chunkPosition = chunkPosition;
         this.terrainColors = terrainColors;
     }
-    public void Execute()
-    {
-        colorMap = ApplyingTextures.GenerateColorMap(terrainColors, noiseMap, colorMap, size);
-    }
+
+
 }
+
+public struct detailPlacement
+{
+    public int gameObjectIndex;
+    public Vector3 placement;
+}
+

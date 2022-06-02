@@ -57,15 +57,6 @@ public class BiomeHandler : MonoBehaviour
         }
     }
 
-    public NativeArray<TerrainColor> terrainColorsArrayToNativeArray(TerrainColor[] terrainColors)
-    {
-        NativeArray<TerrainColor> nativeTerrainColors = new NativeArray<TerrainColor>(terrainColors.Length, Allocator.Persistent);
-        for (int i = 0; i < terrainColors.Length; i++)
-        {
-            nativeTerrainColors[i] = terrainColors[i];
-        }
-        return nativeTerrainColors;
-    }
 
 }
 [System.Serializable]
@@ -77,6 +68,8 @@ public struct Biome
     public int noiseScale;
     public int id;
     public TerrainColor[] terrainColors;
+    public Details[] details;
+    public GameObject[] detailGameObjects;
 }
 [System.Serializable]
 public struct TerrainColor
@@ -92,4 +85,5 @@ public struct Details
     [SerializeField] int likelihood;
     //will show up anwhere lower than this height
     [SerializeField] int height;
+    [SerializeField] int gameObjectIndex;
 }
