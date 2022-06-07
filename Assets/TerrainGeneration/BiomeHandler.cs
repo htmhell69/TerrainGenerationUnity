@@ -69,8 +69,8 @@ public struct Biome
     public int id;
     public TerrainColor[] terrainColors;
     public Detail[] details;
-    [Range(1, 100)]
-    public int detailChance;
+    [Range(0.001f, 100)]
+    public float detailChance;
     public GameObject[] detailGameObjects;
 }
 [System.Serializable]
@@ -83,10 +83,11 @@ public struct TerrainColor
 [System.Serializable]
 public struct Detail
 {
-    [Range(1, 100)]
-    public int likelihood;
-    //will show up anwhere lower than this height
-    public int height;
+    [Range(0.001f, 100)]
+    public float likelihood;
+    public int maxHeight;
+    public int minHeight;
     public int gameObjectIndex;
     public int size;
+    public float smoothness;
 }

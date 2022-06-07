@@ -5,7 +5,7 @@ public static class MeshGeneration
 {
 
     public static MeshData GenerateMesh(ChunkData chunkData, NativeArray<float> heightmap, NativeArray<int> triangles,
-    NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<Detail> details, NativeList<DetailPlacement> detailPlacements, int detailChance)
+    NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<Detail> details, NativeList<DetailPlacement> detailPlacements, float detailChance)
     {
         NativeArray<bool> usedPositions = new NativeArray<bool>((chunkData.chunkSize + 1) * (chunkData.chunkSize + 1),
         Allocator.Temp);
@@ -23,14 +23,16 @@ public static class MeshGeneration
             {
                 vertices[i] = new Vector3(x, heightmap[z * chunkHeight + x] * heightMultiplier, z);
                 uvs[i] = new Vector2(x / (float)chunkWidth, z / (float)chunkHeight);
-                if (usedPositions[z * chunkData.chunkSize + x] == false)
+
+                for (int index = 0; index < details.Length; index++)
                 {
-                    for (int index = 0; index < details.Length; index++)
+                    if (details[index].likelihood > NextFloat(0.001f, 100) && detailChance > NextFloat(0.001f, 100))
                     {
-                        if (details[index].likelihood > Random.Range(0, 100) && detailChance > Random.Range(0, 100))
+                        if (usedPositions[z * chunkData.chunkSize + x] == false)
                         {
-                            detailPlacements.Add(new DetailPlacement(new Vector2(x, z), details[index].gameObjectIndex));
-                            int size = details[i].size;
+                            detailPlacements.Add(new DetailPlacement(new Vector2(x, z), details[index].gameObjectIndex, details[index].size, details[index].smoothness,
+                            details[index].maxHeight, details[index].minHeight));
+                            int size = details[index].size;
                             for (int detailZ = z - (size - 1); detailZ <= z + (size - 1); detailZ++)
                             {
                                 if (detailZ < 0)
@@ -43,12 +45,22 @@ public static class MeshGeneration
                                 }
                                 for (int detailX = x - (size - 1); detailX <= x + (size - 1); detailX++)
                                 {
+                                    if (detailZ < 0)
+                                    {
+                                        continue;
+                                    }
+                                    if (detailZ >= chunkData.chunkSize + 1)
+                                    {
+                                        break;
+                                    }
                                     usedPositions[detailZ * chunkData.chunkSize + detailX] = true;
                                 }
                             }
                         }
                     }
+
                 }
+
                 i++;
             }
         }
@@ -70,9 +82,14 @@ public static class MeshGeneration
             }
             vert++;
         }
-
-
         return new MeshData(vertices, uvs, triangles, detailPlacements);
+    }
+
+    static float NextFloat(float min, float max)
+    {
+        System.Random random = new System.Random();
+        double val = (random.NextDouble() * (max - min) + min);
+        return (float)val;
     }
 
 

@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   viewer: {fileID: 219671369}
-  viewDistanceInChunks: 5
+  viewDistanceInChunks: 2
   chunkSize: 53
   maxAmountOfChunks: 100
   rowMultiplier: 0
@@ -259,7 +259,7 @@ MonoBehaviour:
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 25
-    id: 1
+    id: 0
     terrainColors:
     - height: 2
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
@@ -269,10 +269,13 @@ MonoBehaviour:
       color: {r: 0.6415094, g: 0.6142755, b: 0.6142755, a: 0}
     - height: 150
       color: {r: 1, g: 1, b: 1, a: 0}
+    details: []
+    detailChance: 10
+    detailGameObjects: []
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 15
-    id: 2
+    id: 1
     terrainColors:
     - height: 2
       color: {r: 0.9433962, g: 0.93155247, b: 0.17354932, a: 0}
@@ -282,15 +285,21 @@ MonoBehaviour:
       color: {r: 0.6415094, g: 0.6142755, b: 0.6142755, a: 0}
     - height: 150
       color: {r: 1, g: 1, b: 1, a: 0}
+    details: []
+    detailChance: 0
+    detailGameObjects: []
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 5
-    id: 3
+    id: 2
     terrainColors:
     - height: 4
       color: {r: 0.4528302, g: 0.32806164, b: 0.16447133, a: 0}
     - height: 150
       color: {r: 0.6431373, g: 0.6156863, b: 0.6156863, a: 0}
+    details: []
+    detailChance: 0
+    detailGameObjects: []
   - likelihood: 100
     heightMultiplier: 10
     noiseScale: 100
@@ -300,7 +309,24 @@ MonoBehaviour:
       color: {r: 0, g: 0.1551485, b: 1, a: 0}
     - height: 100
       color: {r: 1, g: 0.9666666, b: 0, a: 0}
-  biomeDiversity: 20
+    details:
+    - likelihood: 1
+      maxHeight: 100
+      minHeight: 2
+      gameObjectIndex: 0
+      size: 1
+      smoothness: 100
+    - likelihood: 0.5
+      maxHeight: 100
+      minHeight: 2
+      gameObjectIndex: 1
+      size: 1
+      smoothness: 100
+    detailChance: 25
+    detailGameObjects:
+    - {fileID: 1012250463788860295, guid: 631abf7c6ae904be5a892fe16527922a, type: 3}
+    - {fileID: 1257754576405690237, guid: 1cc85895b8dfd41888fd1f73b33b6b9e, type: 3}
+  biomeDiversity: 50
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

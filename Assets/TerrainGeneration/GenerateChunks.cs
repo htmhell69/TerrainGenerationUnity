@@ -27,7 +27,9 @@ public class GenerateChunks : MonoBehaviour
     List<GetMeshData> meshJobData = new List<GetMeshData>();
     List<JobHandle> meshJob = new List<JobHandle>();
     List<TerrainChunk> toBeAdjusted = new List<TerrainChunk>();
-
+    List<DetailCoroutine> detailCoroutines = new List<DetailCoroutine>();
+    List<Vector2Int> chunksToBeInitiliazed = new List<Vector2Int>();
+    bool detailCoroutineIsRunning = false;
 
     void Start()
     {
@@ -48,7 +50,6 @@ public class GenerateChunks : MonoBehaviour
         viewerPosition = viewer.position;
         if (isNewChunk)
         {
-            Debug.Log("new chunk");
             UpdateChunks();
         }
     }
@@ -61,7 +62,7 @@ public class GenerateChunks : MonoBehaviour
                 meshJob[i].Complete();
                 TerrainChunk currentChunk = chunks[meshJobData[i].chunkData.chunkPosition.x,
                 meshJobData[i].chunkData.chunkPosition.y];
-                PostMeshGeneration(currentChunk, meshJobData[i].meshData, meshJobData[i].colorMap.ToArray());
+                PostMeshGeneration(currentChunk, meshJobData[i].meshData, meshJobData[i].colorMap.ToArray(), meshJobData[i].meshData.detailPlacements.ToArray());
                 toBeAdjusted.Add(currentChunk);
                 meshJobData[i].terrainColors.Dispose();
                 meshJobData[i].colorMap.Dispose();
@@ -73,7 +74,23 @@ public class GenerateChunks : MonoBehaviour
                 meshJobData[i].details.Dispose();
                 meshJob.RemoveAt(i);
                 meshJobData.RemoveAt(i);
+                if (chunksToBeInitiliazed.Count > 0)
+                {
+                    TerrainChunk chunk = chunks[chunksToBeInitiliazed[0].x, chunksToBeInitiliazed[0].y];
+                    ScheduleJob(chunk);
+                    chunksToBeInitiliazed.RemoveAt(0);
+                }
             }
+        }
+
+        if (detailCoroutineIsRunning == false && detailCoroutines.Count != 0)
+        {
+            detailCoroutineIsRunning = true;
+            Vector2Int chunkPosition = detailCoroutines[0].chunk;
+            DetailPlacement[] detailPlacements = detailCoroutines[0].detailPlacements;
+            TerrainChunk chunk = chunks[chunkPosition.x, chunkPosition.y];
+            StartCoroutine(AddDetailsFromArray(detailPlacements, chunk));
+            detailCoroutines.RemoveAt(0);
         }
 
 
@@ -88,7 +105,6 @@ public class GenerateChunks : MonoBehaviour
                 mesh.UploadMeshData(false);
                 ReadjustMeshCollider(currentChunk);
                 toBeAdjusted.RemoveAt(0);
-
             }
         }
     }
@@ -149,7 +165,7 @@ public class GenerateChunks : MonoBehaviour
         currentChunk.SetVisible(true);
     }
 
-    public void PostMeshGeneration(TerrainChunk chunk, MeshData meshData, Color[] colorMap)
+    public void PostMeshGeneration(TerrainChunk chunk, MeshData meshData, Color[] colorMap, DetailPlacement[] detailPlacements)
     {
         Mesh mesh = new Mesh();
         mesh.vertices = meshData.vertices.ToArray();
@@ -159,52 +175,112 @@ public class GenerateChunks : MonoBehaviour
         mesh.UploadMeshData(false);
         ApplyingTextures.ApplyTextureToChunk(colorMap, chunk, verticeSize);
         ReadjustMeshCollider(chunk);
+        int chunkX = chunk.GetChunkX();
+        int chunkZ = chunk.GetChunkZ();
+        if (detailCoroutineIsRunning == false)
+        {
+            detailCoroutineIsRunning = true;
+            StartCoroutine(AddDetailsFromArray(detailPlacements, chunk));
+        }
+        else
+        {
+            detailCoroutines.Add(new DetailCoroutine(detailPlacements, new Vector2Int(chunkX, chunkZ)));
+        }
+    }
+
+    public IEnumerator AddDetailsFromArray(DetailPlacement[] detailPlacements, TerrainChunk chunk)
+    {
+        float posX = chunk.GetChunkGameObject().transform.position.x;
+        float posZ = chunk.GetChunkGameObject().transform.position.z;
+        int chunkSize = chunk.GetChunkSize();
+        for (int i = 0; i < detailPlacements.Length; i++)
+        {
+            float detailPositionY = 0;
+            List<float> chunkHeights = new List<float>();
+            float size = detailPlacements[i].size;
+            Vector2 detailPosition = new Vector2(posX + detailPlacements[i].placement.x, posZ + detailPlacements[i].placement.y);
+
+            for (float detailZ = detailPosition.x - (size - 1); detailZ <= detailPosition.y + (size - 1); detailZ++)
+            {
+                for (float detailX = detailPosition.x - (size - 1); detailX <= detailPosition.y + (size - 1); detailX++)
+                {
+
+                    RaycastHit hit = new RaycastHit();
+                    Vector3 raycastPosition = new Vector3(detailX, 100, detailZ);
+                    if (Physics.Raycast(raycastPosition, Vector3.down, out hit, Mathf.Infinity, 1, QueryTriggerInteraction.UseGlobal))
+                    {
+                        if (detailX == detailPosition.x && detailZ == detailPosition.y)
+                        {
+                            detailPositionY = hit.point.y;
+                        }
+                        chunkHeights.Add(hit.point.y);
+                    }
+                }
+            }
+            if (chunkHeights.Count != 0)
+            {
+                float slope = 0;
+                for (int index = 0; index < chunkHeights.Count; index++)
+                {
+                    slope += chunkHeights[index];
+                }
+                slope /= chunkHeights.Count;
+
+
+                if (slope / detailPositionY < detailPlacements[i].smoothness &&
+                detailPositionY > detailPlacements[i].minHeight && detailPositionY < detailPlacements[i].maxHeight)
+                {
+                    Vector3 position = new Vector3(detailPosition.x, detailPositionY, detailPosition.y);
+                    GameObject detailGameObject = chunk.GetBiome().detailGameObjects[detailPlacements[i].gameObjectIndex];
+                    GameObject detailObject = Instantiate(detailGameObject, position, detailGameObject.transform.localRotation);
+                    detailObject.transform.parent = chunk.GetChunkGameObject().transform;
+                    yield return null;
+                }
+                else
+                {
+                    yield return null;
+                }
+            }
+            else
+            {
+                yield return null;
+            }
+        }
+        detailCoroutineIsRunning = false;
     }
 
     public void GenerateChunkDetails(TerrainChunk chunk)
     {
+        if (meshJobData.Count >= SystemInfo.processorCount && meshJob.Count >= SystemInfo.processorCount)
+        {
+            chunksToBeInitiliazed.Add(new Vector2Int(chunk.GetChunkX(), chunk.GetChunkZ()));
+        }
+        else
+        {
+            ScheduleJob(chunk);
+        }
+    }
+
+    public void ScheduleJob(TerrainChunk chunk)
+    {
         GameObject chunkGameObject = chunk.GetChunkGameObject();
         int chunkX = chunk.GetChunkX();
         int chunkZ = chunk.GetChunkZ();
-        //decloration
         ChunkData chunkData = new ChunkData(new Vector2Int(chunkX, chunkZ), chunkGameObject.transform.position,
-        seed, chunkSize, chunk.GetBiome().noiseScale, chunk.GetBiome().heightMultiplier);
+            seed, chunkSize, chunk.GetBiome().noiseScale, chunk.GetBiome().heightMultiplier);
         NativeArray<Vector3> vertices = new NativeArray<Vector3>(verticeSize * verticeSize, Allocator.Persistent);
         NativeArray<Vector2> uvs = new NativeArray<Vector2>(verticeSize * verticeSize, Allocator.Persistent);
         NativeArray<int> triangles = new NativeArray<int>(chunkSize * chunkSize * 6, Allocator.Persistent);
         NativeArray<float> noiseMap = new NativeArray<float>(verticeSize * verticeSize, Allocator.Persistent);
         NativeArray<Color> colorMap = new NativeArray<Color>(verticeSize * verticeSize, Allocator.Persistent);
-        NativeArray<TerrainColor> terrainColors = TerrainColorArrayToNative(chunk.GetBiome().terrainColors);
-        NativeArray<Detail> details = DetailArrayToNative(chunk.GetBiome().details);
+        NativeArray<TerrainColor> terrainColors = new NativeArray<TerrainColor>(chunk.GetBiome().terrainColors, Allocator.Persistent);
+        NativeArray<Detail> details = new NativeArray<Detail>(chunk.GetBiome().details, Allocator.Persistent);
         NativeList<DetailPlacement> detailPlacements = new NativeList<DetailPlacement>(Allocator.Persistent);
         // actual call
         GetMeshData job = new GetMeshData(chunkData, vertices, uvs, triangles, noiseMap, colorMap, terrainColors, details, detailPlacements, chunk.GetBiome().detailChance);
         meshJobData.Add(job);
         meshJob.Add(job.Schedule());
     }
-
-    public NativeArray<Detail> DetailArrayToNative(Detail[] details)
-    {
-        NativeArray<Detail> nativeTerrainColors = new NativeArray<Detail>(details.Length, Allocator.Persistent);
-        for (int i = 0; i < details.Length; i++)
-        {
-            nativeTerrainColors[i] = details[i];
-        }
-        return nativeTerrainColors;
-    }
-
-    public NativeArray<TerrainColor> TerrainColorArrayToNative(TerrainColor[] terrainColors)
-    {
-        NativeArray<TerrainColor> nativeTerrainColors = new NativeArray<TerrainColor>(terrainColors.Length, Allocator.Persistent);
-        for (int i = 0; i < terrainColors.Length; i++)
-        {
-            nativeTerrainColors[i] = terrainColors[i];
-        }
-        return nativeTerrainColors;
-    }
-
-
-
     public void AdjustNoiseScaling(TerrainChunk chunk)
     {
         GameObject chunkGameObject = chunk.GetChunkGameObject();
@@ -260,7 +336,7 @@ public class GenerateChunks : MonoBehaviour
         int chunkStartingIndex = 0;
         int chunkIncrementAmount = 1;
         int[] vertices = new int[chunkSize + 1];
-        //these loops will not be affecting the edges so some of these number may look odd. Edges is for another method.
+        //these loops will not be affecting the edges so some of these numbers may look odd. Edges is for another method.
         if (side == Vector2Int.up)
         {
             chunkStartingIndex = xZToIndex(0, chunkSize, verticeSize);
@@ -563,7 +639,6 @@ public struct ChunkData
         this.biomeHeightMultiplier = biomeHeightMultiplier;
     }
 }
-[BurstCompile]
 public struct GetMeshData : IJob
 {
     public ChunkData chunkData;
@@ -572,7 +647,7 @@ public struct GetMeshData : IJob
     public NativeArray<Color> colorMap;
     public NativeArray<TerrainColor> terrainColors;
     public NativeArray<Detail> details;
-    public int detailsChance;
+    public float detailsChance;
     public void Execute()
     {
         for (int z = 0; z < chunkData.chunkSize + 1; z++)
@@ -588,7 +663,7 @@ public struct GetMeshData : IJob
     }
 
     public GetMeshData(ChunkData chunkData, NativeArray<Vector3> vertices, NativeArray<Vector2> uvs, NativeArray<int> triangles, NativeArray<float> noiseMap, NativeArray<Color> colorMap, NativeArray<TerrainColor> terrainColors,
-    NativeArray<Detail> details, NativeList<DetailPlacement> detailPlacements, int detailsChance)
+    NativeArray<Detail> details, NativeList<DetailPlacement> detailPlacements, float detailsChance)
     {
         this.chunkData = chunkData;
         this.meshData = new MeshData(vertices, uvs, triangles, detailPlacements);
@@ -598,18 +673,35 @@ public struct GetMeshData : IJob
         this.details = details;
         this.detailsChance = detailsChance;
     }
-
-
 }
 
 public struct DetailPlacement
 {
     public int gameObjectIndex;
+    public int size;
+    public float smoothness;
+    public float maxHeight;
+    public float minHeight;
     public Vector2 placement;
-    public DetailPlacement(Vector2 placement, int gameObjectIndex)
+    public DetailPlacement(Vector2 placement, int gameObjectIndex, int size, float smoothness, int maxHeight, int minHeight)
     {
         this.placement = placement;
         this.gameObjectIndex = gameObjectIndex;
+        this.size = size;
+        this.smoothness = smoothness;
+        this.minHeight = minHeight;
+        this.maxHeight = maxHeight;
+    }
+}
+
+public struct DetailCoroutine
+{
+    public DetailPlacement[] detailPlacements;
+    public Vector2Int chunk;
+    public DetailCoroutine(DetailPlacement[] detailPlacements, Vector2Int chunk)
+    {
+        this.detailPlacements = detailPlacements;
+        this.chunk = chunk;
     }
 }
 
